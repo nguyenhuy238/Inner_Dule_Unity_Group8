@@ -64,29 +64,46 @@ namespace InnerDuel
         
         private void InitializeGame()
         {
-            // Try to recover players if they are missing
-            if (player1 == null || player2 == null)
-            {
-                RecoverPlayers();
-            }
+            Debug.Log("[InnerDuel] InitializeGame started.");
 
             // Dùng dữ liệu từ màn hình chọn tướng nếu có
             CharacterType p1Type = InnerDuel.UI.SelectionData.P1_Type;
             CharacterType p2Type = InnerDuel.UI.SelectionData.P2_Type;
 
-            // Still missing? Spawn defaults from Factory
-            if (player1 == null)
+            // Kiểm tra xem có player nào "đi lạc" trong scene không trước khi spawn
+            if (player1 != null || player2 != null)
             {
-                Debug.Log($"[InnerDuel] Spawning P1: {p1Type}");
-                GameObject p1Obj = CharacterFactory.Instance.CreateCharacter(p1Type, new Vector3(-5f, 0f, 0f), 1);
-                if (p1Obj != null) player1 = p1Obj.GetComponent<InnerCharacterController>();
+                Debug.LogWarning($"[InnerDuel] Pre-existing players found in scene before spawning: P1: {player1 != null}, P2: {player2 != null}. These will be replaced by newly spawned characters.");
             }
 
-            if (player2 == null)
+            // Luôn ưu tiên spawn nhân vật mới từ Factory dựa trên SelectionData
+            Debug.Log($"[InnerDuel] Spawning P1: {p1Type}");
+            GameObject p1Obj = CharacterFactory.Instance.CreateCharacter(p1Type, new Vector3(-5f, 0f, 0f), 1);
+            if (p1Obj != null) 
             {
-                Debug.Log($"[InnerDuel] Spawning P2: {p2Type}");
-                GameObject p2Obj = CharacterFactory.Instance.CreateCharacter(p2Type, new Vector3(5f, 0f, 0f), 2);
-                if (p2Obj != null) player2 = p2Obj.GetComponent<InnerCharacterController>();
+                player1 = p1Obj.GetComponent<InnerCharacterController>();
+            }
+            else 
+            {
+                Debug.LogError("[InnerDuel] Failed to spawn P1 via Factory!");
+            }
+
+            Debug.Log($"[InnerDuel] Spawning P2: {p2Type}");
+            GameObject p2Obj = CharacterFactory.Instance.CreateCharacter(p2Type, new Vector3(5f, 0f, 0f), 2);
+            if (p2Obj != null) 
+            {
+                player2 = p2Obj.GetComponent<InnerCharacterController>();
+            }
+            else 
+            {
+                Debug.LogError("[InnerDuel] Failed to spawn P2 via Factory!");
+            }
+
+            // Fallback: Nếu spawn thất bại hoàn toàn mới thử Recover
+            if (player1 == null || player2 == null)
+            {
+                Debug.LogWarning("[InnerDuel] Spawning failed. Attempting to recover existing players in scene...");
+                RecoverPlayers();
             }
 
             // Setup character layers and basic settings
@@ -293,15 +310,19 @@ namespace InnerDuel
 
             foreach (var controller in controllers)
             {
+                Debug.Log($"[InnerDuel] Diagnostic: Found potential player object '{controller.gameObject.name}' with PlayerID: {controller.playerID}");
+                
                 if (controller.playerID == 1 && player1 == null)
                 {
                     player1 = controller;
                     foundAny = true;
+                    Debug.Log($"[InnerDuel] Recovered Player 1 from object: {controller.gameObject.name}");
                 }
                 else if (controller.playerID == 2 && player2 == null)
                 {
                     player2 = controller;
                     foundAny = true;
+                    Debug.Log($"[InnerDuel] Recovered Player 2 from object: {controller.gameObject.name}");
                 }
             }
 
