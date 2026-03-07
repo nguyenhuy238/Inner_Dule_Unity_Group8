@@ -16,6 +16,13 @@ namespace InnerDuel
         public InnerCharacterController player1;
         public InnerCharacterController player2;
         
+        // Support for PlayerMovement2D
+        private PlayerMovement2D playerMovement1;
+        private PlayerMovement2D playerMovement2;
+        private bool deathAnimationPlaying = false;
+        private float deathAnimationTimer = 0f;
+        private float deathAnimationDelay = 3f; // Wait 3 seconds for death animation
+        
         [Header("UI")]
         public UIManager uiManager;
         public CameraController cameraController;
@@ -137,26 +144,86 @@ namespace InnerDuel
         
         private void HandleGameplayState()
         {
+            // Try to find PlayerMovement2D if not found yet
+            if (playerMovement1 == null)
+            {
+                var players = GameObject.FindObjectsOfType<PlayerMovement2D>();
+                foreach (var p in players)
+                {
+                    if (p.playerID == 1)
+                    {
+                        playerMovement1 = p;
+                    }
+                    else if (p.playerID == 2)
+                    {
+                        playerMovement2 = p;
+                    }
+                }
+            }
+            
             // Check for references
             if (player1 == null || player2 == null)
             {
                 if (!RecoverPlayers())
                 {
                     Debug.LogWarning("[InnerDuel] Players not found in Gameplay state. No players discovered in scene.");
-                    return;
+                    // Don't return - maybe using PlayerMovement2D instead
                 }
             }
 
-            // Check for win conditions
-            if (player1.IsDead())
+            // Check for win conditions (support both types)
+            bool player1Dead = false;
+            bool player2Dead = false;
+            
+            // Check InnerCharacterController first
+            if (player1 != null && player1.IsDead())
             {
-                winner = player2;
-                StartEnding();
+                player1Dead = true;
             }
-            else if (player2.IsDead())
+            else if (playerMovement1 != null && playerMovement1.IsDead())
             {
-                winner = player1;
-                StartEnding();
+                player1Dead = true;
+            }
+            
+            if (player2 != null && player2.IsDead())
+            {
+                player2Dead = true;
+            }
+            else if (playerMovement2 != null && playerMovement2.IsDead())
+            {
+                player2Dead = true;
+            }
+            
+            // Handle death animation delay
+            if ((player1Dead || player2Dead) && !deathAnimationPlaying)
+            {
+                deathAnimationPlaying = true;
+                deathAnimationTimer = 0f;
+                Debug.Log($"[GameManager] Player died! Waiting {deathAnimationDelay}s for death animation...");
+            }
+            
+            if (deathAnimationPlaying)
+            {
+                deathAnimationTimer += Time.deltaTime;
+                
+                if (deathAnimationTimer >= deathAnimationDelay)
+                {
+                    // Death animation finished, determine winner
+                    if (player1Dead)
+                    {
+                        winner = player2;
+                        Debug.Log("[GameManager] Player 2 wins!");
+                        StartEnding();
+                    }
+                    else if (player2Dead)
+                    {
+                        winner = player1;
+                        Debug.Log("[GameManager] Player 1 wins!");
+                        StartEnding();
+                    }
+                    
+                    deathAnimationPlaying = false;
+                }
             }
             
             // Update UI

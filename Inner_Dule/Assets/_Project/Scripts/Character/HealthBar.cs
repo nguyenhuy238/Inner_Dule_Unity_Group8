@@ -87,5 +87,15 @@ namespace InnerDuel.Characters
         {
             SetMaxHealth(100f);
         }
+        
+        /// <summary>
+        /// Take damage and update health bar
+        /// </summary>
+        public void TakeDamage(int damage)
+        {
+            float currentHealth = healthSlider != null ? healthSlider.value : 0f;
+            float newHealth = Mathf.Max(0f, currentHealth - damage);
+            SetHealth(newHealth);
+        }
     }
 }
