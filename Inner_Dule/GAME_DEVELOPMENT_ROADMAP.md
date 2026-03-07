@@ -21,6 +21,8 @@ Tài liệu tracking tiến độ và kế hoạch phát triển game.
 - [x] **InputManager** – Unity Input System, hỗ trợ 2P local
 - [x] **AudioManager** – BGM, SFX, volume control, fade in/out
 - [x] **CameraController** – Cinemachine, auto-zoom theo 2 player, ending sequence
+- [x] **Status Effect System** – Buff/Debuff base, Slow, Stun logic
+- [x] **Projectile System** – Universal projectile handler cho nhân vật đánh xa
 
 ### Nhân vật & Combat
 - [x] **CharacterType Enum** – Đầy đủ 8 loại nhân vật
@@ -28,8 +30,8 @@ Tài liệu tracking tiến độ và kế hoạch phát triển game.
 - [x] **CharacterFactory** – Factory pattern, spawn + fallback
 - [x] **InnerCharacterController** – Movement, Attack, Block, Dash, Die, BerserkMode
 - [x] **Hitbox/Hurtbox** – OverlapCircleAll-based combat
-- [x] **Discipline Prefab** – Prefab hoàn chỉnh cho The Warden
-- [x] **Spontaneity Prefab** – Prefab cho The Maverick
+- [x] **Discipline Prefab** – The Warden: Parry & Phản đòn (Phản công hoàn hảo)
+- [x] **Spontaneity Prefab** – The Maverick: Dash gây sát thương (Xuyên thấu)
 
 ### UI & Effects
 - [x] **UIManager** – Intro text, Gameplay panel, Ending panel
@@ -52,8 +54,8 @@ Tài liệu tracking tiến độ và kế hoạch phát triển game.
 
 | Nhân vật | Loại | Kỹ năng đặc biệt | Trạng thái |
 |:---|:---|:---|:---|
-| The Warden (Kỷ Luật) | Discipline | Parry + Phản công | ⚠️ Cần polish moveset |
-| The Maverick (Ngẫu Hứng) | Spontaneity | Dash đa hướng + Combo tốc độ | ⚠️ Cần polish moveset |
+| The Warden (Kỷ Luật) | Discipline | Parry + Phản công | ✅ Đã hoàn thiện |
+| The Maverick (Ngẫu Hứng) | Spontaneity | Dash gây sát thương | ✅ Đã hoàn thiện |
 | The Architect (Lý Trí) | Logic | Đặt bẫy + Khống chế vùng | ❌ Chưa có prefab |
 | The Muse (Sáng Tạo) | Creativity | Tầm đánh ngẫu nhiên | ❌ Chưa có prefab |
 | The Unbroken (Kiên Trì) | Persistence | Tăng damage khi HP giảm | ❌ Chưa có prefab |
@@ -70,7 +72,7 @@ Tài liệu tracking tiến độ và kế hoạch phát triển game.
 ### Giai đoạn 2: UI/UX
 
 - [ ] **Main Menu** – Title screen, Settings, Play, Exit
-- [ ] **Character Selection** – Chọn nhân vật cho Player 1 & 2 trước trận
+- [x] **Character Selection** – Chọn nhân vật cho Player 1 & 2 trước trận (SelectionData)
 - [ ] **Pause Menu** – Tạm dừng, Resume, Restart, Quit
 - [ ] **Victory/Defeat Screen** – Kết quả trận đấu, Rematch button
 - [ ] **Settings Screen** – Volume, Controls

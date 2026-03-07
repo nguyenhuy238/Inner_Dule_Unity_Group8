@@ -24,6 +24,7 @@ namespace InnerDuel.Characters
         private Rigidbody2D rb;
         private Animator animator;
         private SpriteRenderer spriteRenderer;
+        private InnerDuel.Core.StatusEffects.StatusEffectManager statusEffectManager;
         
         // State variables
         private float currentHealth;
@@ -50,11 +51,23 @@ namespace InnerDuel.Characters
         private float invincibilityDuration = 0.2f;
         private float invincibilityTimer = 0f;
         
+        // Counters & Windows
+        private float lastBlockStartTime = 0f;
+        private float counterAttackWindow = 0.25f; // Thời gian để kích hoạt phản đòn
+        private bool hasDashedThroughOpponent = false; // Ngăn multi-hit trong 1 lần dash
+        
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
             animator = GetComponent<Animator>();
             spriteRenderer = GetComponent<SpriteRenderer>();
+            statusEffectManager = GetComponent<InnerDuel.Core.StatusEffects.StatusEffectManager>();
+            
+            // Auto-add StatusEffectManager if missing
+            if (statusEffectManager == null)
+            {
+                statusEffectManager = gameObject.AddComponent<InnerDuel.Core.StatusEffects.StatusEffectManager>();
+            }
             
             if (animator != null)
             {
@@ -126,6 +139,13 @@ namespace InnerDuel.Characters
         {
             if (!canMove || isAttacking || isDashing) return;
             
+            // Kiểm tra trạng thái Stun
+            if (statusEffectManager != null && statusEffectManager.HasEffect("Stun"))
+            {
+                rb.velocity = Vector2.zero;
+                return;
+            }
+
             rb.velocity = moveInput * characterData.moveSpeed;
             
             if (moveInput != Vector2.zero)
@@ -139,25 +159,32 @@ namespace InnerDuel.Characters
                 spriteRenderer.flipX = lastMoveDirection.x < 0;
             }
         }
-        
         private void HandleAbilities()
         {
-            // Block ability
-            if (characterData.canBlock && blockCooldown <= 0)
+            // --- TEAM HOOK: Thêm logic kỹ năng đặc biệt của nhân vật tại đây ---
+            HandleUniqueAbilities();
+            // ----------------------------------------------------------------
+        }
+        
+        private void HandleUniqueAbilities()
+        {
+            // Spontaneity: Dash Damage Logic
+            if (characterData.type == CharacterType.Spontaneity && isDashing && !hasDashedThroughOpponent)
             {
-                // Handle block input (will be connected to Input System)
-            }
-            
-            // Dash ability
-            if (characterData.canDash && dashCooldown <= 0)
-            {
-                // Handle dash input (will be connected to Input System)
-            }
-            
-            // Berserk mode
-            if (characterData.hasBerserkMode && currentHealth <= characterData.maxHealth * 0.3f && !isInBerserkMode)
-            {
-                EnterBerserkMode();
+                Collider2D[] hitOpponents = Physics2D.OverlapCircleAll(transform.position, 1f, opponentLayer);
+                foreach (Collider2D opponent in hitOpponents)
+                {
+                    var opponentController = opponent.GetComponent<InnerCharacterController>();
+                    if (opponentController != null)
+                    {
+                        opponentController.TakeDamage(characterData.attackDamage * 0.5f); // Dash deals 50% damage
+                        hasDashedThroughOpponent = true;
+                        
+                        // Effect
+                        if (InnerDuel.Effects.ParticleEffectsManager.Instance != null)
+                            InnerDuel.Effects.ParticleEffectsManager.Instance.PlayEffect("Dash", transform.position, characterData.effectColor);
+                    }
+                }
             }
         }
         
@@ -177,6 +204,8 @@ namespace InnerDuel.Characters
         
         public void OnAttack(InputAction.CallbackContext context)
         {
+            if (statusEffectManager != null && statusEffectManager.HasEffect("Stun")) return;
+
             if (context.performed && !isDead && !isAttacking && attackCooldown <= 0)
             {
                 Attack();
@@ -209,10 +238,10 @@ namespace InnerDuel.Characters
         {
             isAttacking = true;
             canMove = false;
-            attackCooldown = 0.5f;
+            attackCooldown = characterData.attackCooldown; // Dùng thông số từ Data
             
             // Check for opponents in range
-            Collider2D[] hitOpponents = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, opponentLayer);
+            Collider2D[] hitOpponents = Physics2D.OverlapCircleAll(attackPoint.position, characterData.attackRange, opponentLayer);
             
             foreach (Collider2D opponent in hitOpponents)
             {
@@ -239,6 +268,9 @@ namespace InnerDuel.Characters
             isBlocking = true;
             canMove = false;
             blockCooldown = 0.2f;
+            lastBlockStartTime = Time.time;
+            
+            animator.SetBool("IsBlocking", true);
         }
         
         private void StopBlocking()
@@ -251,13 +283,14 @@ namespace InnerDuel.Characters
         {
             isDashing = true;
             canMove = false;
-            dashCooldown = 1f;
+            dashCooldown = 1f; 
+            hasDashedThroughOpponent = false; // Reset flash damage flag
             
             // Perform dash
             Vector2 dashDirection = lastMoveDirection != Vector2.zero ? lastMoveDirection : Vector2.right;
-            rb.velocity = dashDirection * characterData.moveSpeed * 3f;
+            rb.velocity = dashDirection * characterData.moveSpeed * characterData.dashSpeedMultiplier;
             
-            Invoke(nameof(ResetDash), 0.2f);
+            Invoke(nameof(ResetDash), characterData.dashDuration);
         }
         
         private void ResetDash()
@@ -292,15 +325,26 @@ namespace InnerDuel.Characters
         {
             if (isDead || invincibilityTimer > 0) return;
             
+            // Tính toán phòng thủ
+            float finalDamage = Mathf.Max(1f, damage - (characterData.defense * 0.5f));
+            
             if (isBlocking)
             {
-                damage *= 0.2f; // Block reduces 80% damage
+                // Kiểm tra Counter-attack cho Kỷ Luật (Discipline)
+                if (characterData.canCounterAttack && (Time.time - lastBlockStartTime) <= counterAttackWindow)
+                {
+                    Debug.Log($"[InnerDuel] {characterData.characterName} triggered COUNTER-ATTACK!");
+                    TriggerCounterAttack();
+                    return; // Không nhận sát thương nếu phản đòn thành công (Perfect Block)
+                }
+                
+                finalDamage *= 0.2f; // Block bình thường giảm 80% sát thương
             }
             
-            currentHealth -= damage;
-            invincibilityTimer = invincibilityDuration; // Prevent multi-hit in 1 frame
+            currentHealth -= finalDamage;
+            invincibilityTimer = invincibilityDuration;
             
-            // Visual feedback for damage
+            // Visual feedback
             if (spriteRenderer != null) StartCoroutine(DamageFlash());
             
             if (healthBar != null)
@@ -312,6 +356,19 @@ namespace InnerDuel.Characters
             {
                 Die();
             }
+        }
+        
+        private void TriggerCounterAttack()
+        {
+            // Reset block
+            StopBlocking();
+            
+            // Thực hiện đòn đánh tức thì
+            Attack();
+            
+            // Hiệu ứng phản đòn
+            if (InnerDuel.Effects.ParticleEffectsManager.Instance != null)
+                InnerDuel.Effects.ParticleEffectsManager.Instance.PlayEffect("Parry", transform.position, Color.yellow);
         }
         
         private System.Collections.IEnumerator DamageFlash()

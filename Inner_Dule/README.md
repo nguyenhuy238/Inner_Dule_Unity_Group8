@@ -51,13 +51,13 @@ Game có **8 nhân vật** chia thành **4 cặp thái cực đối lập**:
 
 | Cặp | Nhân vật 1 | Nhân vật 2 |
 |:---|:---|:---|
-| Kỷ Luật vs Ngẫu Hứng | **The Warden** – Chậm, chắc chắn, block | **The Maverick** – Nhanh, linh hoạt, dash |
+| Kỷ Luật vs Ngẫu Hứng | **The Warden** – Parry & Phản đòn | **The Maverick** – Dash gây sát thương |
 | Lý Trí vs Sáng Tạo | **The Architect** – Tầm xa, bẫy | **The Muse** – Tầm đánh thay đổi |
 | Kiên Trì vs Từ Bỏ | **The Unbroken** – Càng bị đánh càng mạnh | **The Void** – Hút máu |
 | Tĩnh Lặng vs Thịnh Nộ | **The Zen** – Phản đòn | **The Berserker** – Berserk mode |
 
 > [!NOTE]
-> Hiện tại chỉ có **Discipline (Warden)** và **Spontaneity (Maverick)** có prefab. 6 nhân vật còn lại cần được tạo thêm.
+> Hiện tại **The Warden** và **The Maverick** đã được hoàn thiện đầy đủ kỹ năng. Các nhân vật còn lại có thể kế thừa từ hệ thống Framework có sẵn (Projectile, Status Effects).
 
 ---
 
@@ -81,10 +81,11 @@ Inner_Dule/
 │       ├── Scripts/
 │       │   ├── Core/              ← Singleton, Bootstrap, InputManager, AudioManager
 │       │   ├── Game/              ← GameManager (state machine)
-│       │   ├── Character/         ← CharacterController, Factory, HealthBar, Data
+│       │   ├── Character/         ← Controller, Factory, HealthBar, Data
 │       │   ├── Camera/            ← CameraController (Cinemachine)
-│       │   ├── UI/                ← UIManager
-│       │   └── Effects/           ← ParticleEffectsManager
+│       │   ├── UI/                ← UIManager, CharacterSelection
+│       │   ├── Effects/           ← ParticleEffectsManager
+│       │   └── Core/              ← StatusEffects, Projectiles
 │       ├── Scenes/Scenes/         ← MainGameScene, SampleScene
 │       ├── Prefabs/Prefabs/Characters/ ← Discipline, Spontaneity prefabs
 │       ├── Art/Animations/        ← Animation assets

@@ -18,13 +18,14 @@ Tài liệu mô tả kiến trúc kỹ thuật của dự án, giúp team hiểu
 
 ```
 InnerDuel                    ← Root namespace (GameManager)
-├── InnerDuel.Core           ← Singleton<T>, Bootstrap
+├── InnerDuel.Core           ← Singleton<T>, Bootstrap, Projectile
+├── InnerDuel.Core.StatusEffects ← StatusEffect base, StatusEffectManager, Slow/Stun
 ├── InnerDuel.Input          ← InputManager, InputActions  
 ├── InnerDuel.Audio          ← AudioManager
 ├── InnerDuel.Characters     ← InnerCharacterController, CharacterFactory, 
 │                              CharacterType, CharacterData, HealthBar
 ├── InnerDuel.Camera         ← CameraController
-├── InnerDuel.UI             ← UIManager
+├── InnerDuel.UI             ← UIManager, CharacterSelectionManager, SelectionData
 └── InnerDuel.Effects        ← ParticleEffectsManager
 ```
 
@@ -42,10 +43,13 @@ graph TD
     GM --> CF["CharacterFactory"]
     GM --> UI["UIManager"]
     GM --> CAM["CameraController"]
+    GM --> Sel["CharacterSelectionManager"]
     
     CF --> P1["Player 1<br/><i>InnerCharacterController</i>"]
     CF --> P2["Player 2<br/><i>InnerCharacterController</i>"]
     
+    P1 --> SEM1["StatusEffectManager P1"]
+    P2 --> SEM2["StatusEffectManager P2"]
     P1 --> HB1["HealthBar P1"]
     P2 --> HB2["HealthBar P2"]
     P1 --> FX["ParticleEffectsManager"]
@@ -54,6 +58,7 @@ graph TD
     IM --> P1
     IM --> P2
     AM --> GM
+    Sel --> GM
 ```
 
 ---
@@ -129,7 +134,8 @@ canCounterAttack, hasBerserkMode, hasRageMode
 
 **InnerCharacterController states:**
 - Move / Idle / Attack / Block / Dash / Die
-- Hỗ trợ: BerserkMode, DamageFlash, TakeDamage với defense calculation
+- Hỗ trợ: BerserkMode, DamageFlash, TakeDamage với defense calculation.
+- **Tích hợp Status Effects**: Kiểm tra flag `Stun` để tự động vô hiệu hóa input điều khiển.
 
 ### 5. Camera – `InnerDuel.Camera`
 
@@ -141,13 +147,34 @@ canCounterAttack, hasBerserkMode, hasRageMode
 
 | Class | File | Vai trò |
 |:---|:---|:---|
-| `UIManager` | `UI/UIManager.cs` | Quản lý 3 panel: Intro (triết lý), Gameplay (health bars), Ending (HARMONY ACHIEVED). Có typewriter + fade effects. |
+| `UIManager` | `UI/UIManager.cs` | Quản lý 3 panel: Intro (triết lý), Gameplay (health bars), Ending (HARMONY ACHIEVED). |
+| `CharacterSelectionManager` | `UI/CharacterSelectionManager.cs` | Xử lý logic chọn tướng cho P1/P2 trước trận đấu. |
+| `SelectionData` | `UI/CharacterSelectionManager.cs` | Class tĩnh lưu trữ lựa chọn nhân vật giữa các scene. |
 
 ### 7. Effects – `InnerDuel.Effects`
 
 | Class | File | Vai trò |
 |:---|:---|:---|
-| `ParticleEffectsManager` | `Effects/ParticleEffectsManager.cs` | Quản lý particle effects: Hit (8 màu theo nhân vật), Block, Parry, Dash, Berserk, Harmony, LifeSteal. Tự tạo default effects nếu chưa gán. |
+| `ParticleEffectsManager` | `Effects/ParticleEffectsManager.cs` | Quản lý particle effects: Hit (8 màu), Block, Parry, Dash... Có phương thức `PlayEffect` linh hoạt cho team. |
+
+---
+
+## Các Hệ thống Nâng cao (Advanced Systems)
+
+### 8. Hệ thống Trạng thái – `InnerDuel.Core.StatusEffects`
+
+Quản lý các Buff/Debuff trên nhân vật thông qua `StatusEffectManager`.
+
+- **`StatusEffect`**: Base class cho mọi hiệu ứng. Có các hook `OnApply`, `OnUpdate`, `OnRemove`.
+- **`SlowEffect`**: Giảm `moveSpeed` của nhân vật theo tỷ lệ phần trăm trong thời gian nhất định.
+- **`StunEffect`**: Khóa input điều khiển bằng cách kiểm tra flag trong `InnerCharacterController`.
+
+### 9. Hệ thống Đạn đạo – `InnerDuel.Core.Projectile`
+
+Cung cấp cơ sở cho các nhân vật đánh xa (Ranged Characters).
+
+- **`Projectile`**: Xử lý bay theo hướng, va chạm với Layer mục tiêu, gây sát thương và trigger hiệu ứng nổ qua `ParticleEffectsManager`.
+- Các thông số chính: `speed`, `damage`, `lifetime`, `targetLayer`.
 
 ---
 

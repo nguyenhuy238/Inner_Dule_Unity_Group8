@@ -158,6 +158,20 @@ audioManager?.PlayHitSound();
 
 // ❌ Không dùng trực tiếp mà không kiểm tra
 healthBar.SetHealth(currentHealth); // Có thể crash
+
+---
+
+## Kiểm tra Trạng thái (Status Effects)
+
+Khi viết logic cho chiêu thức mới trong `InnerCharacterController`, luôn kiểm tra các trạng thái khống chế:
+
+```csharp
+// Kiểm tra Stun trước khi cho phép hành động
+if (statusEffectManager != null && statusEffectManager.HasEffect("Stun"))
+{
+    return; // Không cho phép thực hiện chiêu thức
+}
+```
 ```
 
 ---

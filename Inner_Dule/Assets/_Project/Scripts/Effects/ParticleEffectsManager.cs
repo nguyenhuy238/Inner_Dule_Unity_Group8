@@ -117,6 +117,34 @@ namespace InnerDuel.Effects
             }
         }
         
+        /// <summary>
+        /// Chạy hiệu ứng theo tên. Team có thể dùng để trigger nhanh các hiệu ứng chung.
+        /// </summary>
+        public void PlayEffect(string effectName, Vector3 position, Color? color = null)
+        {
+            ParticleSystem prefab = null;
+            switch (effectName.ToLower())
+            {
+                case "dash": prefab = dashEffect; break;
+                case "block": prefab = blockEffect; break;
+                case "parry": prefab = parryEffect; break;
+                case "berserk": prefab = berserkEffect; break;
+                case "harmony": prefab = harmonyEffect; break;
+            }
+
+            if (prefab != null)
+            {
+                ParticleSystem instance = Instantiate(prefab, position, Quaternion.identity);
+                if (color.HasValue)
+                {
+                    var main = instance.main;
+                    main.startColor = color.Value;
+                }
+                instance.Play();
+                Destroy(instance.gameObject, instance.main.duration + 0.5f);
+            }
+        }
+        
         private ParticleSystem GetHitEffect(CharacterType type)
         {
             switch (type)
