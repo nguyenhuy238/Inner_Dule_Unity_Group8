@@ -70,18 +70,22 @@ namespace InnerDuel
                 RecoverPlayers();
             }
 
+            // Dùng dữ liệu từ màn hình chọn tướng nếu có
+            CharacterType p1Type = InnerDuel.UI.SelectionData.P1_Type;
+            CharacterType p2Type = InnerDuel.UI.SelectionData.P2_Type;
+
             // Still missing? Spawn defaults from Factory
             if (player1 == null)
             {
-                Debug.Log("[InnerDuel] Auto-spawning P1: Discipline");
-                GameObject p1Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Discipline, new Vector3(-5f, 0f, 0f), 1);
+                Debug.Log($"[InnerDuel] Spawning P1: {p1Type}");
+                GameObject p1Obj = CharacterFactory.Instance.CreateCharacter(p1Type, new Vector3(-5f, 0f, 0f), 1);
                 if (p1Obj != null) player1 = p1Obj.GetComponent<InnerCharacterController>();
             }
 
             if (player2 == null)
             {
-                Debug.Log("[InnerDuel] Auto-spawning P2: Spontaneity");
-                GameObject p2Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Spontaneity, new Vector3(5f, 0f, 0f), 2);
+                Debug.Log($"[InnerDuel] Spawning P2: {p2Type}");
+                GameObject p2Obj = CharacterFactory.Instance.CreateCharacter(p2Type, new Vector3(5f, 0f, 0f), 2);
                 if (p2Obj != null) player2 = p2Obj.GetComponent<InnerCharacterController>();
             }
 
