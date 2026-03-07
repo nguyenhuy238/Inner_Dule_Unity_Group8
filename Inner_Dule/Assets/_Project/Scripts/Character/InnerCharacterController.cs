@@ -53,8 +53,14 @@ namespace InnerDuel.Characters
         
         // Counters & Windows
         private float lastBlockStartTime = 0f;
-        private float counterAttackWindow = 0.25f; // Thời gian để kích hoạt phản đòn
-        private bool hasDashedThroughOpponent = false; // Ngăn multi-hit trong 1 lần dash
+        
+        // Ability System
+        private System.Collections.Generic.List<BaseCharacterAbility> abilities = new System.Collections.Generic.List<BaseCharacterAbility>();
+        
+        // Properties for Abilities
+        public bool IsDashing => isDashing;
+        public bool IsBlocking => isBlocking;
+        public float LastBlockStartTime => lastBlockStartTime;
         
         private void Awake()
         {
@@ -94,11 +100,12 @@ namespace InnerDuel.Characters
             
             if (characterData != null)
             {
-                currentHealth = characterData.maxHealth;
+                InitializeFromData();
             }
             else
             {
-                Debug.LogError($"[InnerDuel] CharacterData missing on {gameObject.name}!");
+                // Note: If spawned via Factory, data is set immediately after Instantiate,
+                // so we don't need to error here, but we should handle it in Start or via setter.
                 currentHealth = 100f;
             }
             
@@ -106,16 +113,41 @@ namespace InnerDuel.Characters
             {
                 healthBar.SetMaxHealth(currentHealth);
             }
+
+            // Initialize Abilities
+            abilities.AddRange(GetComponents<BaseCharacterAbility>());
+            foreach (var ability in abilities)
+            {
+                ability.Initialize(this, characterData);
+            }
+        }
+
+        public void InitializeFromData()
+        {
+            if (characterData == null) return;
+            
+            currentHealth = characterData.maxHealth;
+            if (healthBar != null) healthBar.SetMaxHealth(currentHealth);
+            
+            // Refresh and initialize abilities
+            abilities.Clear();
+            abilities.AddRange(GetComponents<BaseCharacterAbility>());
+            foreach (var ability in abilities)
+            {
+                ability.Initialize(this, characterData);
+            }
         }
         
         private void Update()
         {
-            if (isDead) return;
+            if (isDead || characterData == null) return;
             
             UpdateTimers();
             HandleMovement();
             HandleAbilities();
             UpdateAnimator();
+
+            foreach (var ability in abilities) ability.OnUpdate();
         }
         
         private void UpdateTimers()
@@ -146,6 +178,7 @@ namespace InnerDuel.Characters
                 return;
             }
 
+            if (rb == null) return;
             rb.velocity = moveInput * characterData.moveSpeed;
             
             if (moveInput != Vector2.zero)
@@ -161,31 +194,7 @@ namespace InnerDuel.Characters
         }
         private void HandleAbilities()
         {
-            // --- TEAM HOOK: Thêm logic kỹ năng đặc biệt của nhân vật tại đây ---
-            HandleUniqueAbilities();
-            // ----------------------------------------------------------------
-        }
-        
-        private void HandleUniqueAbilities()
-        {
-            // Spontaneity: Dash Damage Logic
-            if (characterData.type == CharacterType.Spontaneity && isDashing && !hasDashedThroughOpponent)
-            {
-                Collider2D[] hitOpponents = Physics2D.OverlapCircleAll(transform.position, 1f, opponentLayer);
-                foreach (Collider2D opponent in hitOpponents)
-                {
-                    var opponentController = opponent.GetComponent<InnerCharacterController>();
-                    if (opponentController != null)
-                    {
-                        opponentController.TakeDamage(characterData.attackDamage * 0.5f); // Dash deals 50% damage
-                        hasDashedThroughOpponent = true;
-                        
-                        // Effect
-                        if (InnerDuel.Effects.ParticleEffectsManager.Instance != null)
-                            InnerDuel.Effects.ParticleEffectsManager.Instance.PlayEffect("Dash", transform.position, characterData.effectColor);
-                    }
-                }
-            }
+            // Logic đặc biệt đã được chuyển sang hệ thống Ability rời (BaseCharacterAbility)
         }
         
         private void UpdateAnimator()
@@ -253,6 +262,8 @@ namespace InnerDuel.Characters
                 }
             }
             
+            foreach (var ability in abilities) ability.OnAttack();
+            
             // Reset attack state
             Invoke(nameof(ResetAttack), 0.3f);
         }
@@ -271,12 +282,14 @@ namespace InnerDuel.Characters
             lastBlockStartTime = Time.time;
             
             animator.SetBool("IsBlocking", true);
+            foreach (var ability in abilities) ability.OnBlockStart();
         }
         
         private void StopBlocking()
         {
             isBlocking = false;
             canMove = true;
+            foreach (var ability in abilities) ability.OnBlockEnd();
         }
         
         private void Dash()
@@ -284,12 +297,13 @@ namespace InnerDuel.Characters
             isDashing = true;
             canMove = false;
             dashCooldown = 1f; 
-            hasDashedThroughOpponent = false; // Reset flash damage flag
             
             // Perform dash
             Vector2 dashDirection = lastMoveDirection != Vector2.zero ? lastMoveDirection : Vector2.right;
             rb.velocity = dashDirection * characterData.moveSpeed * characterData.dashSpeedMultiplier;
             
+            foreach (var ability in abilities) ability.OnDash();
+
             Invoke(nameof(ResetDash), characterData.dashDuration);
         }
         
@@ -330,15 +344,13 @@ namespace InnerDuel.Characters
             
             if (isBlocking)
             {
-                // Kiểm tra Counter-attack cho Kỷ Luật (Discipline)
-                if (characterData.canCounterAttack && (Time.time - lastBlockStartTime) <= counterAttackWindow)
-                {
-                    Debug.Log($"[InnerDuel] {characterData.characterName} triggered COUNTER-ATTACK!");
-                    TriggerCounterAttack();
-                    return; // Không nhận sát thương nếu phản đòn thành công (Perfect Block)
-                }
+                // Thông báo tới các Ability để xử lý logic phản đòn hoặc giảm sát thương thêm
+                foreach (var ability in abilities) ability.OnTakeDamage(damage);
                 
-                finalDamage *= 0.2f; // Block bình thường giảm 80% sát thương
+                // Nếu bị Stun hoặc chết trong khi xử lý Ability (ví dụ phản đòn bị lỗi), thoát
+                if (isDead) return;
+
+                finalDamage *= 0.15f; // Block bình thường của Kỷ Luật giảm 85% sát thương
             }
             
             currentHealth -= finalDamage;
@@ -358,7 +370,7 @@ namespace InnerDuel.Characters
             }
         }
         
-        private void TriggerCounterAttack()
+        public void TriggerCounterAttack()
         {
             // Reset block
             StopBlocking();
@@ -390,6 +402,7 @@ namespace InnerDuel.Characters
             
             // Notify game manager
             GameManager.Instance.OnCharacterDied(this);
+            foreach (var ability in abilities) ability.OnDie();
         }
         
         public bool IsDead() => isDead;

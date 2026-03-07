@@ -76,11 +76,31 @@ namespace InnerDuel.Characters
                 controller.characterData = data;
                 controller.playerID = playerID;
                 
+                // Add Unique Abilities based on CharacterType
+                AddUniqueAbilities(characterObj, type);
+                
+                // Ensure controller initializes with the new data
+                controller.InitializeFromData();
+                
                 // Set layer based on player ID
                 characterObj.layer = playerID == 1 ? LayerMask.NameToLayer("Player1") : LayerMask.NameToLayer("Player2");
             }
             
             return characterObj;
+        }
+
+        private void AddUniqueAbilities(GameObject characterObj, CharacterType type)
+        {
+            switch (type)
+            {
+                case CharacterType.Discipline:
+                    characterObj.AddComponent<Ability_DisciplineParry>();
+                    break;
+                case CharacterType.Spontaneity:
+                    characterObj.AddComponent<Ability_SpontaneityDash>();
+                    break;
+                // Add more cases here for other characters as their abilities are implemented
+            }
         }
         
         private GameObject GetCharacterPrefab(CharacterType type)
@@ -140,120 +160,48 @@ namespace InnerDuel.Characters
         
         private CharacterData CreateDefaultCharacterData(CharacterType type)
         {
-            CharacterData data = new CharacterData();
+            Debug.LogWarning($"[InnerDuel] CharacterData SO for {type} is missing! Using runtime default stats. Please create the SO asset in the Editor for persistence.");
+            
+            CharacterData data = ScriptableObject.CreateInstance<CharacterData>();
             data.type = type;
             
+            // Re-implementing the default stats as fallback
             switch (type)
             {
                 case CharacterType.Discipline:
-                    data.characterName = "Kỷ Luật";
-                    data.description = "The Warden - Chỉnh chu, nghiêm túc. Có khả năng chặn đòn và phản công mạnh mẽ.";
-                    data.maxHealth = 130f;
-                    data.moveSpeed = 2.5f;
-                    data.defense = 10f;
-                    data.attackDamage = 15f;
+                    data.characterName = "Kỷ Luật (The Warden) [Fallback]";
+                    data.maxHealth = 150f;
+                    data.moveSpeed = 3f;
+                    data.defense = 15f;
+                    data.attackDamage = 20f;
                     data.attackRange = 1.3f;
-                    data.attackCooldown = 0.7f;
-                    data.mainColor = Color.blue;
+                    data.attackCooldown = 0.8f;
+                    data.mainColor = new Color(0.2f, 0.4f, 1f);
                     data.effectColor = Color.yellow;
                     data.canBlock = true;
                     data.canCounterAttack = true;
                     break;
                     
                 case CharacterType.Spontaneity:
-                    data.characterName = "Ngẫu Hứng";
-                    data.description = "The Maverick - Tự do, linh hoạt. Tốc độ cao và khả năng lướt biến ảo.";
-                    data.maxHealth = 85f;
-                    data.moveSpeed = 8f;
-                    data.defense = 3f;
-                    data.attackDamage = 8f;
+                    data.characterName = "Ngẫu Hứng (The Maverick) [Fallback]";
+                    data.maxHealth = 80f;
+                    data.moveSpeed = 7.5f;
+                    data.defense = 2f;
+                    data.attackDamage = 12f;
                     data.attackRange = 1.1f;
-                    data.attackCooldown = 0.4f;
+                    data.attackCooldown = 0.35f;
+                    data.dashSpeedMultiplier = 4f;
+                    data.dashDuration = 0.25f;
                     data.mainColor = Color.white;
                     data.effectColor = Color.cyan;
                     data.canDash = true;
                     break;
-                    
-                case CharacterType.Logic:
-                    data.characterName = "Lý Trí";
-                    data.description = "The Architect - Tính toán, tầm xa. Có thể đặt bẫy khống chế đối thủ.";
+                
+                default:
+                    data.characterName = type.ToString() + " [Fallback]";
                     data.maxHealth = 100f;
-                    data.moveSpeed = 4f;
-                    data.defense = 5f;
-                    data.attackDamage = 12f;
-                    data.attackRange = 2.5f;
-                    data.attackCooldown = 0.8f;
-                    data.mainColor = Color.green;
-                    data.effectColor = Color.blue;
-                    data.canPlaceTraps = true;
-                    break;
-                    
-                case CharacterType.Creativity:
-                    data.characterName = "Sáng Tạo";
-                    data.description = "The Muse - Ngẫu hứng, khó đoán. Tầm đánh và sát thương thay đổi liên tục.";
-                    data.maxHealth = 90f;
-                    data.moveSpeed = 6f;
-                    data.defense = 4f;
-                    data.attackDamage = 10f;
-                    data.attackRange = 1.5f;
-                    data.attackCooldown = 0.5f;
-                    data.mainColor = Color.magenta;
-                    data.effectColor = Color.yellow;
-                    break;
-                    
-                case CharacterType.Persistence:
-                    data.characterName = "Kiên Trì";
-                    data.description = "The Unbroken - Bền bỉ, lầm lì. Càng mất nhiều máu càng trở nên nguy hiểm.";
-                    data.maxHealth = 110f;
-                    data.moveSpeed = 4f;
-                    data.defense = 7f;
-                    data.attackDamage = 10f;
-                    data.attackRange = 1.2f;
-                    data.attackCooldown = 0.6f;
-                    data.mainColor = Color.gray;
-                    data.effectColor = Color.white;
-                    break;
-                    
-                case CharacterType.Surrender:
-                    data.characterName = "Từ Bỏ";
-                    data.description = "The Void - Hư vô, đáng sợ. Hút sinh lực và làm suy yếu ý chí đối thủ.";
-                    data.maxHealth = 85f;
                     data.moveSpeed = 5f;
-                    data.defense = 4f;
-                    data.attackDamage = 7f;
-                    data.attackRange = 1.4f;
-                    data.attackCooldown = 0.5f;
-                    data.mainColor = Color.black;
-                    data.effectColor = Color.grey;
-                    data.hasLifeSteal = true;
-                    break;
-                    
-                case CharacterType.Stillness:
-                    data.characterName = "Tĩnh Lặng";
-                    data.description = "The Zen - Điềm tĩnh, sâu sắc. Phản đòn mạnh mẽ khi đối thủ sơ hở.";
-                    data.maxHealth = 95f;
-                    data.moveSpeed = 3f;
-                    data.defense = 6f;
-                    data.attackDamage = 14f;
-                    data.attackRange = 1.2f;
-                    data.attackCooldown = 0.7f;
-                    data.mainColor = Color.gray;
-                    data.effectColor = Color.white;
-                    data.canCounterAttack = true;
-                    break;
-                    
-                case CharacterType.Rage:
-                    data.characterName = "Thịnh Nộ";
-                    data.description = "The Berserker - Cuồng bạo, khát máu. Sức mạnh bộc phát khi rơi vào trạng thái nguy kịch.";
-                    data.maxHealth = 100f;
-                    data.moveSpeed = 6f;
-                    data.defense = 3f;
-                    data.attackDamage = 12f;
-                    data.attackRange = 1.1f;
-                    data.attackCooldown = 0.4f;
-                    data.mainColor = Color.red;
-                    data.effectColor = Color.yellow;
-                    data.hasBerserkMode = true;
+                    data.attackDamage = 10f;
                     break;
             }
             
