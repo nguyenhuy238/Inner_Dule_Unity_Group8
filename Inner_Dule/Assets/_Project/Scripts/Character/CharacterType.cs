@@ -28,8 +28,8 @@ namespace InnerDuel.Characters
     /// Chứa tất cả thông số cấu hình của một nhân vật.
     /// Team nên thay đổi ở đây để tạo sự khác biệt giữa các nhân vật.
     /// </summary>
-    [System.Serializable]
-    public class CharacterData
+    [CreateAssetMenu(fileName = "NewCharacterData", menuName = "InnerDuel/Character/CharacterData")]
+    public class CharacterData : ScriptableObject
     {
         [Header("Identity")]
         public CharacterType type;
@@ -44,10 +44,10 @@ namespace InnerDuel.Characters
         
         [Header("Combat Stats")]
         public float attackDamage = 10f;
-        public float attackRange = 1.2f;   // Tầm đánh (mới)
-        public float attackCooldown = 0.5f; // Tốc độ đánh (mới)
-        public float dashSpeedMultiplier = 3f; // Tốc độ lướt (mới)
-        public float dashDuration = 0.2f;      // Thời gian lướt (mới)
+        public float attackRange = 1.2f;
+        public float attackCooldown = 0.5f;
+        public float dashSpeedMultiplier = 3f;
+        public float dashDuration = 0.2f;
         
         [Header("Visuals")]
         public Color mainColor = Color.white;
