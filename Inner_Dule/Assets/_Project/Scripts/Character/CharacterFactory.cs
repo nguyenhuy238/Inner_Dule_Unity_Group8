@@ -69,6 +69,8 @@ namespace InnerDuel.Characters
             GameObject characterObj = Instantiate(prefab, position, Quaternion.identity);
             characterObj.name = $"{type}_P{playerID}";
             
+            Debug.Log($"[CharacterFactory] Successfully instantiated {characterObj.name} at {position}.");
+            
             // Setup character controller
             InnerDuel.Characters.InnerCharacterController controller = characterObj.GetComponent<InnerDuel.Characters.InnerCharacterController>();
             if (controller != null)
