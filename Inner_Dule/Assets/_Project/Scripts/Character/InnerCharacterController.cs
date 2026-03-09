@@ -393,12 +393,14 @@ namespace InnerDuel.Characters
         
         private void Die()
         {
+            if (isDead) return; // Already dead
+            
             isDead = true;
             canMove = false;
             rb.velocity = Vector2.zero;
             
-            // Trigger death animation
-            animator.SetTrigger("Die");
+            // Set isDead bool instead of trigger to prevent loops
+            animator.SetBool("isDead", true);
             
             // Notify game manager
             GameManager.Instance.OnCharacterDied(this);

@@ -16,6 +16,13 @@ namespace InnerDuel
         public InnerCharacterController player1;
         public InnerCharacterController player2;
         
+        // Support for PlayerMovement2D
+        private PlayerMovement2D playerMovement1;
+        private PlayerMovement2D playerMovement2;
+        private bool deathAnimationPlaying = false;
+        private float deathAnimationTimer = 0f;
+        private float deathAnimationDelay = 3f; // Wait 3 seconds for death animation
+        
         [Header("UI")]
         public UIManager uiManager;
         public CameraController cameraController;
@@ -88,22 +95,32 @@ namespace InnerDuel
                 Debug.LogError("[InnerDuel] Failed to spawn P1 via Factory!");
             }
 
-            Debug.Log($"[InnerDuel] Spawning P2: {p2Type}");
-            GameObject p2Obj = CharacterFactory.Instance.CreateCharacter(p2Type, new Vector3(5f, 0f, 0f), 2);
-            if (p2Obj != null) 
+            // Declare player objects upfront
+            GameObject p1Obj = null;
+            GameObject p2Obj = null;
+            
+            // Still missing? Spawn defaults from Factory
+            if (player1 == null)
             {
-                player2 = p2Obj.GetComponent<InnerCharacterController>();
-            }
-            else 
-            {
-                Debug.LogError("[InnerDuel] Failed to spawn P2 via Factory!");
+                Debug.Log("[InnerDuel] Auto-spawning P1: Logic");
+                p1Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Logic, new Vector3(-5f, 0f, 0f), 1);
+                if (p1Obj != null)
+                {
+                    player1 = p1Obj.GetComponent<InnerCharacterController>();
+                    playerMovement1 = p1Obj.GetComponent<PlayerMovement2D>();
+                }
             }
 
             // Fallback: Nếu spawn thất bại hoàn toàn mới thử Recover
             if (player1 == null || player2 == null)
             {
-                Debug.LogWarning("[InnerDuel] Spawning failed. Attempting to recover existing players in scene...");
-                RecoverPlayers();
+                Debug.Log("[InnerDuel] Auto-spawning P2: Creativity");
+                p2Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Creativity, new Vector3(5f, 0f, 0f), 2);
+                if (p2Obj != null)
+                {
+                    player2 = p2Obj.GetComponent<InnerCharacterController>();
+                    playerMovement2 = p2Obj.GetComponent<PlayerMovement2D>();
+                }
             }
 
             // Setup character layers and basic settings
@@ -114,10 +131,43 @@ namespace InnerDuel
             {
                 player1.opponentLayer = LayerMask.GetMask("Player2");
                 player2.opponentLayer = LayerMask.GetMask("Player1");
-                
-                // Link to Camera and UI
-                if (cameraController != null) cameraController.SetTargets(player1.transform, player2.transform);
-                if (uiManager != null) uiManager.InitializeWithPlayers(player1, player2);
+            }
+            
+            // Get player GameObjects for camera (works with both controller types)
+            if (p1Obj == null) p1Obj = player1?.gameObject;
+            if (p2Obj == null) p2Obj = player2?.gameObject;
+            
+            // Fallback: find by PlayerMovement2D if InnerCharacterController not available
+            if (p1Obj == null || p2Obj == null)
+            {
+                var allPlayers = GameObject.FindObjectsOfType<PlayerMovement2D>();
+                foreach (var p in allPlayers)
+                {
+                    if (p.playerID == 1 && p1Obj == null) p1Obj = p.gameObject;
+                    if (p.playerID == 2 && p2Obj == null) p2Obj = p.gameObject;
+                }
+            }
+            
+            // Link to Camera
+            if (cameraController != null && p1Obj != null && p2Obj != null)
+            {
+                cameraController.SetTargets(p1Obj.transform, p2Obj.transform);
+                Debug.Log($"[GameManager] Camera targets set: {p1Obj.name}, {p2Obj.name}");
+            }
+            else if (cameraController != null)
+            {
+                Debug.LogWarning("[GameManager] Camera could not be set - missing player objects");
+            }
+            
+            // Link to UI (always call even if player1/player2 are null - UIManager will find PlayerMovement2D)
+            if (uiManager != null)
+            {
+                uiManager.InitializeWithPlayers(player1, player2);
+                Debug.Log("[GameManager] UIManager.InitializeWithPlayers() called");
+            }
+            else
+            {
+                Debug.LogError("[GameManager] UIManager is NULL! Cannot initialize health bars!");
             }
             
             // Start with intro
@@ -158,26 +208,86 @@ namespace InnerDuel
         
         private void HandleGameplayState()
         {
+            // Try to find PlayerMovement2D if not found yet
+            if (playerMovement1 == null)
+            {
+                var players = GameObject.FindObjectsOfType<PlayerMovement2D>();
+                foreach (var p in players)
+                {
+                    if (p.playerID == 1)
+                    {
+                        playerMovement1 = p;
+                    }
+                    else if (p.playerID == 2)
+                    {
+                        playerMovement2 = p;
+                    }
+                }
+            }
+            
             // Check for references
             if (player1 == null || player2 == null)
             {
                 if (!RecoverPlayers())
                 {
                     Debug.LogWarning("[InnerDuel] Players not found in Gameplay state. No players discovered in scene.");
-                    return;
+                    // Don't return - maybe using PlayerMovement2D instead
                 }
             }
 
-            // Check for win conditions
-            if (player1.IsDead())
+            // Check for win conditions (support both types)
+            bool player1Dead = false;
+            bool player2Dead = false;
+            
+            // Check InnerCharacterController first
+            if (player1 != null && player1.IsDead())
             {
-                winner = player2;
-                StartEnding();
+                player1Dead = true;
             }
-            else if (player2.IsDead())
+            else if (playerMovement1 != null && playerMovement1.IsDead())
             {
-                winner = player1;
-                StartEnding();
+                player1Dead = true;
+            }
+            
+            if (player2 != null && player2.IsDead())
+            {
+                player2Dead = true;
+            }
+            else if (playerMovement2 != null && playerMovement2.IsDead())
+            {
+                player2Dead = true;
+            }
+            
+            // Handle death animation delay
+            if ((player1Dead || player2Dead) && !deathAnimationPlaying)
+            {
+                deathAnimationPlaying = true;
+                deathAnimationTimer = 0f;
+                Debug.Log($"[GameManager] Player died! Waiting {deathAnimationDelay}s for death animation...");
+            }
+            
+            if (deathAnimationPlaying)
+            {
+                deathAnimationTimer += Time.deltaTime;
+                
+                if (deathAnimationTimer >= deathAnimationDelay)
+                {
+                    // Death animation finished, determine winner
+                    if (player1Dead)
+                    {
+                        winner = player2;
+                        Debug.Log("[GameManager] Player 2 wins!");
+                        StartEnding();
+                    }
+                    else if (player2Dead)
+                    {
+                        winner = player1;
+                        Debug.Log("[GameManager] Player 1 wins!");
+                        StartEnding();
+                    }
+                    
+                    deathAnimationPlaying = false;
+                }
             }
             
             // Update UI

@@ -7,6 +7,11 @@ namespace InnerDuel.Input
 {
     public class InputManager : Singleton<InputManager>
     {
+        public static InputManager InstanceSafe()
+        {
+            // Return existing instance if present in the scene; avoid auto-creating one
+            return (InputManager)Object.FindObjectOfType(typeof(InputManager));
+        }
         
         private PlayerInput playerInput;
         private InputAction moveAction1, moveAction2;
