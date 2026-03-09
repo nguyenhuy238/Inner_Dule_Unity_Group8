@@ -24,6 +24,7 @@ namespace InnerDuel.Characters
         private Rigidbody2D rb;
         private Animator animator;
         private SpriteRenderer spriteRenderer;
+        private InnerDuel.Core.StatusEffects.StatusEffectManager statusEffectManager;
         
         // State variables
         private float currentHealth;
@@ -50,11 +51,29 @@ namespace InnerDuel.Characters
         private float invincibilityDuration = 0.2f;
         private float invincibilityTimer = 0f;
         
+        // Counters & Windows
+        private float lastBlockStartTime = 0f;
+        
+        // Ability System
+        private System.Collections.Generic.List<BaseCharacterAbility> abilities = new System.Collections.Generic.List<BaseCharacterAbility>();
+        
+        // Properties for Abilities
+        public bool IsDashing => isDashing;
+        public bool IsBlocking => isBlocking;
+        public float LastBlockStartTime => lastBlockStartTime;
+        
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
             animator = GetComponent<Animator>();
             spriteRenderer = GetComponent<SpriteRenderer>();
+            statusEffectManager = GetComponent<InnerDuel.Core.StatusEffects.StatusEffectManager>();
+            
+            // Auto-add StatusEffectManager if missing
+            if (statusEffectManager == null)
+            {
+                statusEffectManager = gameObject.AddComponent<InnerDuel.Core.StatusEffects.StatusEffectManager>();
+            }
             
             if (animator != null)
             {
@@ -81,11 +100,12 @@ namespace InnerDuel.Characters
             
             if (characterData != null)
             {
-                currentHealth = characterData.maxHealth;
+                InitializeFromData();
             }
             else
             {
-                Debug.LogError($"[InnerDuel] CharacterData missing on {gameObject.name}!");
+                // Note: If spawned via Factory, data is set immediately after Instantiate,
+                // so we don't need to error here, but we should handle it in Start or via setter.
                 currentHealth = 100f;
             }
             
@@ -93,16 +113,41 @@ namespace InnerDuel.Characters
             {
                 healthBar.SetMaxHealth(currentHealth);
             }
+
+            // Initialize Abilities
+            abilities.AddRange(GetComponents<BaseCharacterAbility>());
+            foreach (var ability in abilities)
+            {
+                ability.Initialize(this, characterData);
+            }
+        }
+
+        public void InitializeFromData()
+        {
+            if (characterData == null) return;
+            
+            currentHealth = characterData.maxHealth;
+            if (healthBar != null) healthBar.SetMaxHealth(currentHealth);
+            
+            // Refresh and initialize abilities
+            abilities.Clear();
+            abilities.AddRange(GetComponents<BaseCharacterAbility>());
+            foreach (var ability in abilities)
+            {
+                ability.Initialize(this, characterData);
+            }
         }
         
         private void Update()
         {
-            if (isDead) return;
+            if (isDead || characterData == null) return;
             
             UpdateTimers();
             HandleMovement();
             HandleAbilities();
             UpdateAnimator();
+
+            foreach (var ability in abilities) ability.OnUpdate();
         }
         
         private void UpdateTimers()
@@ -126,6 +171,14 @@ namespace InnerDuel.Characters
         {
             if (!canMove || isAttacking || isDashing) return;
             
+            // Kiểm tra trạng thái Stun
+            if (statusEffectManager != null && statusEffectManager.HasEffect("Stun"))
+            {
+                rb.velocity = Vector2.zero;
+                return;
+            }
+
+            if (rb == null) return;
             rb.velocity = moveInput * characterData.moveSpeed;
             
             if (moveInput != Vector2.zero)
@@ -139,26 +192,9 @@ namespace InnerDuel.Characters
                 spriteRenderer.flipX = lastMoveDirection.x < 0;
             }
         }
-        
         private void HandleAbilities()
         {
-            // Block ability
-            if (characterData.canBlock && blockCooldown <= 0)
-            {
-                // Handle block input (will be connected to Input System)
-            }
-            
-            // Dash ability
-            if (characterData.canDash && dashCooldown <= 0)
-            {
-                // Handle dash input (will be connected to Input System)
-            }
-            
-            // Berserk mode
-            if (characterData.hasBerserkMode && currentHealth <= characterData.maxHealth * 0.3f && !isInBerserkMode)
-            {
-                EnterBerserkMode();
-            }
+            // Logic đặc biệt đã được chuyển sang hệ thống Ability rời (BaseCharacterAbility)
         }
         
         private void UpdateAnimator()
@@ -177,6 +213,8 @@ namespace InnerDuel.Characters
         
         public void OnAttack(InputAction.CallbackContext context)
         {
+            if (statusEffectManager != null && statusEffectManager.HasEffect("Stun")) return;
+
             if (context.performed && !isDead && !isAttacking && attackCooldown <= 0)
             {
                 Attack();
@@ -209,10 +247,10 @@ namespace InnerDuel.Characters
         {
             isAttacking = true;
             canMove = false;
-            attackCooldown = 0.5f;
+            attackCooldown = characterData.attackCooldown; // Dùng thông số từ Data
             
             // Check for opponents in range
-            Collider2D[] hitOpponents = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, opponentLayer);
+            Collider2D[] hitOpponents = Physics2D.OverlapCircleAll(attackPoint.position, characterData.attackRange, opponentLayer);
             
             foreach (Collider2D opponent in hitOpponents)
             {
@@ -223,6 +261,8 @@ namespace InnerDuel.Characters
                     opponentHealth.TakeDamage(damage);
                 }
             }
+            
+            foreach (var ability in abilities) ability.OnAttack();
             
             // Reset attack state
             Invoke(nameof(ResetAttack), 0.3f);
@@ -239,25 +279,32 @@ namespace InnerDuel.Characters
             isBlocking = true;
             canMove = false;
             blockCooldown = 0.2f;
+            lastBlockStartTime = Time.time;
+            
+            animator.SetBool("IsBlocking", true);
+            foreach (var ability in abilities) ability.OnBlockStart();
         }
         
         private void StopBlocking()
         {
             isBlocking = false;
             canMove = true;
+            foreach (var ability in abilities) ability.OnBlockEnd();
         }
         
         private void Dash()
         {
             isDashing = true;
             canMove = false;
-            dashCooldown = 1f;
+            dashCooldown = 1f; 
             
             // Perform dash
             Vector2 dashDirection = lastMoveDirection != Vector2.zero ? lastMoveDirection : Vector2.right;
-            rb.velocity = dashDirection * characterData.moveSpeed * 3f;
+            rb.velocity = dashDirection * characterData.moveSpeed * characterData.dashSpeedMultiplier;
             
-            Invoke(nameof(ResetDash), 0.2f);
+            foreach (var ability in abilities) ability.OnDash();
+
+            Invoke(nameof(ResetDash), characterData.dashDuration);
         }
         
         private void ResetDash()
@@ -292,15 +339,24 @@ namespace InnerDuel.Characters
         {
             if (isDead || invincibilityTimer > 0) return;
             
+            // Tính toán phòng thủ
+            float finalDamage = Mathf.Max(1f, damage - (characterData.defense * 0.5f));
+            
             if (isBlocking)
             {
-                damage *= 0.2f; // Block reduces 80% damage
+                // Thông báo tới các Ability để xử lý logic phản đòn hoặc giảm sát thương thêm
+                foreach (var ability in abilities) ability.OnTakeDamage(damage);
+                
+                // Nếu bị Stun hoặc chết trong khi xử lý Ability (ví dụ phản đòn bị lỗi), thoát
+                if (isDead) return;
+
+                finalDamage *= 0.15f; // Block bình thường của Kỷ Luật giảm 85% sát thương
             }
             
-            currentHealth -= damage;
-            invincibilityTimer = invincibilityDuration; // Prevent multi-hit in 1 frame
+            currentHealth -= finalDamage;
+            invincibilityTimer = invincibilityDuration;
             
-            // Visual feedback for damage
+            // Visual feedback
             if (spriteRenderer != null) StartCoroutine(DamageFlash());
             
             if (healthBar != null)
@@ -312,6 +368,19 @@ namespace InnerDuel.Characters
             {
                 Die();
             }
+        }
+        
+        public void TriggerCounterAttack()
+        {
+            // Reset block
+            StopBlocking();
+            
+            // Thực hiện đòn đánh tức thì
+            Attack();
+            
+            // Hiệu ứng phản đòn
+            if (InnerDuel.Effects.ParticleEffectsManager.Instance != null)
+                InnerDuel.Effects.ParticleEffectsManager.Instance.PlayEffect("Parry", transform.position, Color.yellow);
         }
         
         private System.Collections.IEnumerator DamageFlash()
@@ -335,8 +404,7 @@ namespace InnerDuel.Characters
             
             // Notify game manager
             GameManager.Instance.OnCharacterDied(this);
-            
-            Debug.Log($"[InnerCharacterController] {gameObject.name} died!");
+            foreach (var ability in abilities) ability.OnDie();
         }
         
         public bool IsDead() => isDead;
