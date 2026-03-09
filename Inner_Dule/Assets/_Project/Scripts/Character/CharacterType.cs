@@ -15,10 +15,6 @@ namespace InnerDuel.Characters
         Logic,         // Lý Trí - The Architect
         Creativity,    // Cảm Xúc - The Muse
         
-        // Cặp 3: Kiên Trì vs Từ Bỏ
-        Persistence,   // Kiên Trì - The Unbroken
-        Surrender,     // Từ Bỏ - The Void
-        
         // Cặp 4: Tĩnh Lặng vs Thịnh Nộ
         Stillness,     // Tĩnh Lặng - The Zen
         Rage           // Thịnh Nộ - The Berserker
