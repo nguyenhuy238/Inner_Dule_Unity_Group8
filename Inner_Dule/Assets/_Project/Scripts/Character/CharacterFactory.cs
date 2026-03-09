@@ -9,10 +9,34 @@ namespace InnerDuel.Characters
         public GameObject spontaneityPrefab;
         public GameObject logicPrefab;
         public GameObject creativityPrefab;
-        public GameObject persistencePrefab;
-        public GameObject surrenderPrefab;
         public GameObject stillnessPrefab;
         public GameObject ragePrefab;
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            AutoAssignPrefabs();
+        }
+
+        private void AutoAssignPrefabs()
+        {
+            if (disciplinePrefab == null) disciplinePrefab = FindPrefab("Discipline_Character");
+            if (spontaneityPrefab == null) spontaneityPrefab = FindPrefab("Spontaneity_Character");
+            if (logicPrefab == null) logicPrefab = FindPrefab("Logic_Character") ?? FindPrefab("Player1");
+            if (creativityPrefab == null) creativityPrefab = FindPrefab("Creativity_Character") ?? FindPrefab("Player2");
+        }
+
+        private GameObject FindPrefab(string name)
+        {
+            string[] guids = UnityEditor.AssetDatabase.FindAssets(name + " t:Prefab");
+            if (guids.Length > 0)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            }
+            return null;
+        }
+#endif
         
         [Header("Character Data")]
         public CharacterData[] characterDataArray;
@@ -115,8 +139,6 @@ namespace InnerDuel.Characters
                 case CharacterType.Spontaneity: selectedPrefab = spontaneityPrefab; break;
                 case CharacterType.Logic: selectedPrefab = logicPrefab; break;
                 case CharacterType.Creativity: selectedPrefab = creativityPrefab; break;
-                case CharacterType.Persistence: selectedPrefab = persistencePrefab; break;
-                case CharacterType.Surrender: selectedPrefab = surrenderPrefab; break;
                 case CharacterType.Stillness: selectedPrefab = stillnessPrefab; break;
                 case CharacterType.Rage: selectedPrefab = ragePrefab; break;
             }
@@ -126,9 +148,12 @@ namespace InnerDuel.Characters
                 Debug.LogError($"[InnerDuel] Prefab for {type} is NOT assigned in CharacterFactory!");
 
                 // Fallback: try to find any assigned prefab to avoid returning null
-                selectedPrefab = disciplinePrefab ?? spontaneityPrefab ?? logicPrefab ?? 
-                                 creativityPrefab ?? persistencePrefab ?? surrenderPrefab ?? 
-                                 stillnessPrefab ?? ragePrefab;
+                selectedPrefab = disciplinePrefab != null ? disciplinePrefab :
+                                spontaneityPrefab != null ? spontaneityPrefab :
+                                logicPrefab != null ? logicPrefab : 
+                                creativityPrefab != null ? creativityPrefab :
+                                stillnessPrefab != null ? stillnessPrefab :
+                                ragePrefab;
                                  
                 if (selectedPrefab != null)
                 {
@@ -218,8 +243,8 @@ namespace InnerDuel.Characters
             }
             
             // Create default data array if none exists
-            CharacterData[] defaultData = new CharacterData[8];
-            for (int i = 0; i < 8; i++)
+            CharacterData[] defaultData = new CharacterData[6];
+            for (int i = 0; i < 6; i++)
             {
                 defaultData[i] = CreateDefaultCharacterData((CharacterType)i);
             }

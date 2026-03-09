@@ -12,8 +12,6 @@ namespace InnerDuel.Effects
         public ParticleSystem spontaneityHitEffect;
         public ParticleSystem logicHitEffect;
         public ParticleSystem creativityHitEffect;
-        public ParticleSystem persistenceHitEffect;
-        public ParticleSystem surrenderHitEffect;
         public ParticleSystem stillnessHitEffect;
         public ParticleSystem rageHitEffect;
         
@@ -153,8 +151,6 @@ namespace InnerDuel.Effects
                 case CharacterType.Spontaneity: return spontaneityHitEffect;
                 case CharacterType.Logic: return logicHitEffect;
                 case CharacterType.Creativity: return creativityHitEffect;
-                case CharacterType.Persistence: return persistenceHitEffect;
-                case CharacterType.Surrender: return surrenderHitEffect;
                 case CharacterType.Stillness: return stillnessHitEffect;
                 case CharacterType.Rage: return rageHitEffect;
                 default: return null;
@@ -182,16 +178,6 @@ namespace InnerDuel.Effects
             if (creativityHitEffect == null)
             {
                 creativityHitEffect = CreateDefaultHitEffect(Color.magenta, "CreativityHit");
-            }
-            
-            if (persistenceHitEffect == null)
-            {
-                persistenceHitEffect = CreateDefaultHitEffect(Color.white, "PersistenceHit");
-            }
-            
-            if (surrenderHitEffect == null)
-            {
-                surrenderHitEffect = CreateDefaultHitEffect(Color.grey, "SurrenderHit");
             }
             
             if (stillnessHitEffect == null)

@@ -73,6 +73,10 @@ namespace InnerDuel
         {
             Debug.Log("[InnerDuel] InitializeGame started.");
 
+            // Declare player objects upfront to avoid redefinition
+            GameObject p1Obj = null;
+            GameObject p2Obj = null;
+
             // Dùng dữ liệu từ màn hình chọn tướng nếu có
             CharacterType p1Type = InnerDuel.UI.SelectionData.P1_Type;
             CharacterType p2Type = InnerDuel.UI.SelectionData.P2_Type;
@@ -85,7 +89,7 @@ namespace InnerDuel
 
             // Luôn ưu tiên spawn nhân vật mới từ Factory dựa trên SelectionData
             Debug.Log($"[InnerDuel] Spawning P1: {p1Type}");
-            GameObject p1Obj = CharacterFactory.Instance.CreateCharacter(p1Type, new Vector3(-5f, 0f, 0f), 1);
+            p1Obj = CharacterFactory.Instance.CreateCharacter(p1Type, new Vector3(-5f, 0f, 0f), 1);
             if (p1Obj != null) 
             {
                 player1 = p1Obj.GetComponent<InnerCharacterController>();
@@ -95,9 +99,6 @@ namespace InnerDuel
                 Debug.LogError("[InnerDuel] Failed to spawn P1 via Factory!");
             }
 
-            // Declare player objects upfront
-            GameObject p1Obj = null;
-            GameObject p2Obj = null;
             
             // Still missing? Spawn defaults from Factory
             if (player1 == null)
@@ -137,26 +138,38 @@ namespace InnerDuel
             if (p1Obj == null) p1Obj = player1?.gameObject;
             if (p2Obj == null) p2Obj = player2?.gameObject;
             
-            // Fallback: find by PlayerMovement2D if InnerCharacterController not available
+            // Fallback: find any objects with PlayerMovement2D if InnerCharacterController not available
             if (p1Obj == null || p2Obj == null)
             {
-                var allPlayers = GameObject.FindObjectsOfType<PlayerMovement2D>();
-                foreach (var p in allPlayers)
+                var allMovements = GameObject.FindObjectsOfType<PlayerMovement2D>();
+                foreach (var m in allMovements)
                 {
-                    if (p.playerID == 1 && p1Obj == null) p1Obj = p.gameObject;
-                    if (p.playerID == 2 && p2Obj == null) p2Obj = p.gameObject;
+                    if (m.playerID == 1 && p1Obj == null) p1Obj = m.gameObject;
+                    if (m.playerID == 2 && p2Obj == null) p2Obj = m.gameObject;
                 }
             }
+
+            // LINKING PHASE
+            Debug.Log($"[GameManager] Linking phase: P1={p1Obj?.name}, P2={p2Obj?.name}");
             
             // Link to Camera
-            if (cameraController != null && p1Obj != null && p2Obj != null)
+            if (cameraController != null)
             {
-                cameraController.SetTargets(p1Obj.transform, p2Obj.transform);
-                Debug.Log($"[GameManager] Camera targets set: {p1Obj.name}, {p2Obj.name}");
-            }
-            else if (cameraController != null)
-            {
-                Debug.LogWarning("[GameManager] Camera could not be set - missing player objects");
+                if (p1Obj != null && p2Obj != null)
+                {
+                    cameraController.SetTargets(p1Obj.transform, p2Obj.transform);
+                    Debug.Log($"[GameManager] Camera targets set: {p1Obj.name}, {p2Obj.name}");
+                }
+                else if (p1Obj != null || p2Obj != null)
+                {
+                    Transform target = p1Obj != null ? p1Obj.transform : p2Obj.transform;
+                    cameraController.SetTargets(target, target); // Focus on the only available player
+                    Debug.LogWarning($"[GameManager] Camera focused on single player: {target.name}");
+                }
+                else
+                {
+                    Debug.LogError("[GameManager] Camera could not be set - no player objects found!");
+                }
             }
             
             // Link to UI (always call even if player1/player2 are null - UIManager will find PlayerMovement2D)
