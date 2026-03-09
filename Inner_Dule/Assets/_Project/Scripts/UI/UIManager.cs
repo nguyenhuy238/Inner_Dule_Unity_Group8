@@ -50,8 +50,39 @@ namespace InnerDuel.UI
         
         public void InitializeWithPlayers(InnerCharacterController p1, InnerCharacterController p2)
         {
+            Debug.Log($"[UIManager] InitializeWithPlayers called - p1={p1?.name}, p2={p2?.name}");
+            
             player1 = p1;
             player2 = p2;
+            
+            // Get GameObjects (works even if InnerCharacterController is null)
+            GameObject p1Obj = p1?.gameObject;
+            GameObject p2Obj = p2?.gameObject;
+            
+            Debug.Log($"[UIManager] p1Obj={p1Obj?.name}, p2Obj={p2Obj?.name}");
+            
+            // Fallback: find by PlayerMovement2D if InnerCharacterController not available
+            if (p1Obj == null)
+            {
+                Debug.Log("[UIManager] p1Obj is NULL, searching for PlayerMovement2D with playerID=1");
+                var allPlayers = GameObject.FindObjectsOfType<PlayerMovement2D>();
+                foreach (var pm in allPlayers)
+                {
+                    if (pm.playerID == 1) { p1Obj = pm.gameObject; Debug.Log($"[UIManager] Found P1: {pm.name}"); break; }
+                }
+            }
+            
+            if (p2Obj == null)
+            {
+                Debug.Log("[UIManager] p2Obj is NULL, searching for PlayerMovement2D with playerID=2");
+                var allPlayers = GameObject.FindObjectsOfType<PlayerMovement2D>();
+                foreach (var pm in allPlayers)
+                {
+                    if (pm.playerID == 2) { p2Obj = pm.gameObject; Debug.Log($"[UIManager] Found P2: {pm.name}"); break; }
+                }
+            }
+            
+            Debug.Log($"[UIManager] After fallback - p1Obj={p1Obj?.name}, p2Obj={p2Obj?.name}");
             
             // Setup character names
             if (player1 != null && player1Name != null)
@@ -64,7 +95,7 @@ namespace InnerDuel.UI
                 player2Name.text = player2.characterData.characterName;
             }
             
-            // Setup health bars
+            // Setup health bars for InnerCharacterController
             if (player1 != null && player1HealthBar != null)
             {
                 player1HealthBar.SetMaxHealth(player1.characterData.maxHealth);
@@ -75,6 +106,23 @@ namespace InnerDuel.UI
             {
                 player2HealthBar.SetMaxHealth(player2.characterData.maxHealth);
                 player2.healthBar = player2HealthBar;
+            }
+            
+            // Setup for PlayerMovement2D (find from GameObject)
+            var p1Movement = p1Obj?.GetComponent<PlayerMovement2D>();
+            if (p1Movement != null && player1HealthBar != null)
+            {
+                p1Movement.healthBar = player1HealthBar;
+                p1Movement.InitializeHealthBar();
+                Debug.Log($"[UIManager] P1 HealthBar assigned to PlayerMovement2D");
+            }
+            
+            var p2Movement = p2Obj?.GetComponent<PlayerMovement2D>();
+            if (p2Movement != null && player2HealthBar != null)
+            {
+                p2Movement.healthBar = player2HealthBar;
+                p2Movement.InitializeHealthBar();
+                Debug.Log($"[UIManager] P2 HealthBar assigned to PlayerMovement2D");
             }
         }
         

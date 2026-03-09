@@ -156,7 +156,7 @@ namespace InnerDuel.Characters
                 }
                 else
                 {
-                    Debug.LogError($"Player{playerID} HealthBar.healthSlider is NULL! Please assign it in Inspector.");
+                    Debug.LogWarning($"Player{playerID} HealthBar.healthSlider is NULL! It will be assigned later.");
                 }
                 
                 healthBar.SetMaxHealth(maxHealth);
@@ -165,7 +165,7 @@ namespace InnerDuel.Characters
             }
             else
             {
-                Debug.LogError($"Player{playerID} HealthBar is NULL! Please assign HealthBar in Inspector.");
+                Debug.LogWarning($"Player{playerID} HealthBar is NULL in Awake(). UIManager will assign it later.");
             }
 
             // Cache animator parameter availability to avoid mismatches
@@ -421,6 +421,11 @@ namespace InnerDuel.Characters
             {
                 rb.velocity = new Vector2(rb.velocity.x, 0f);
                 rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+                Debug.Log($"Player{playerID} JUMPING! jumpForce={jumpForce}");
+            }
+            else if (jumpQueued && !isGrounded)
+            {
+                Debug.LogWarning($"Player{playerID} tried to jump but NOT GROUNDED! groundCheck={groundCheck?.name}, groundCheckRadius={groundCheckRadius}, groundLayer={groundLayer.value}");
             }
             jumpQueued = false;
 
@@ -622,6 +627,23 @@ namespace InnerDuel.Characters
                     enemyController.TakeDamage(attackDamage);
                     Debug.Log($"Player{playerID} Attack{attackNumber} dealt {attackDamage} damage to {enemy.name}");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Initialize HealthBar after it's assigned by UIManager
+        /// </summary>
+        public void InitializeHealthBar()
+        {
+            if (healthBar != null)
+            {
+                healthBar.SetMaxHealth(maxHealth);
+                healthBar.SetHealth(currentHealth);
+                Debug.Log($"Player{playerID} HealthBar initialized by UIManager");
+            }
+            else
+            {
+                Debug.LogWarning($"Player{playerID} InitializeHealthBar called but healthBar is still NULL");
             }
         }
 

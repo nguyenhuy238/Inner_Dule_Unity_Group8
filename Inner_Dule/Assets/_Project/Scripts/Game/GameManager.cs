@@ -77,19 +77,31 @@ namespace InnerDuel
                 RecoverPlayers();
             }
 
+            // Declare player objects upfront
+            GameObject p1Obj = null;
+            GameObject p2Obj = null;
+            
             // Still missing? Spawn defaults from Factory
             if (player1 == null)
             {
-                Debug.Log("[InnerDuel] Auto-spawning P1: Discipline");
-                GameObject p1Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Discipline, new Vector3(-5f, 0f, 0f), 1);
-                if (p1Obj != null) player1 = p1Obj.GetComponent<InnerCharacterController>();
+                Debug.Log("[InnerDuel] Auto-spawning P1: Logic");
+                p1Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Logic, new Vector3(-5f, 0f, 0f), 1);
+                if (p1Obj != null)
+                {
+                    player1 = p1Obj.GetComponent<InnerCharacterController>();
+                    playerMovement1 = p1Obj.GetComponent<PlayerMovement2D>();
+                }
             }
 
             if (player2 == null)
             {
-                Debug.Log("[InnerDuel] Auto-spawning P2: Spontaneity");
-                GameObject p2Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Spontaneity, new Vector3(5f, 0f, 0f), 2);
-                if (p2Obj != null) player2 = p2Obj.GetComponent<InnerCharacterController>();
+                Debug.Log("[InnerDuel] Auto-spawning P2: Creativity");
+                p2Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Creativity, new Vector3(5f, 0f, 0f), 2);
+                if (p2Obj != null)
+                {
+                    player2 = p2Obj.GetComponent<InnerCharacterController>();
+                    playerMovement2 = p2Obj.GetComponent<PlayerMovement2D>();
+                }
             }
 
             // Setup character layers and basic settings
@@ -100,10 +112,43 @@ namespace InnerDuel
             {
                 player1.opponentLayer = LayerMask.GetMask("Player2");
                 player2.opponentLayer = LayerMask.GetMask("Player1");
-                
-                // Link to Camera and UI
-                if (cameraController != null) cameraController.SetTargets(player1.transform, player2.transform);
-                if (uiManager != null) uiManager.InitializeWithPlayers(player1, player2);
+            }
+            
+            // Get player GameObjects for camera (works with both controller types)
+            if (p1Obj == null) p1Obj = player1?.gameObject;
+            if (p2Obj == null) p2Obj = player2?.gameObject;
+            
+            // Fallback: find by PlayerMovement2D if InnerCharacterController not available
+            if (p1Obj == null || p2Obj == null)
+            {
+                var allPlayers = GameObject.FindObjectsOfType<PlayerMovement2D>();
+                foreach (var p in allPlayers)
+                {
+                    if (p.playerID == 1 && p1Obj == null) p1Obj = p.gameObject;
+                    if (p.playerID == 2 && p2Obj == null) p2Obj = p.gameObject;
+                }
+            }
+            
+            // Link to Camera
+            if (cameraController != null && p1Obj != null && p2Obj != null)
+            {
+                cameraController.SetTargets(p1Obj.transform, p2Obj.transform);
+                Debug.Log($"[GameManager] Camera targets set: {p1Obj.name}, {p2Obj.name}");
+            }
+            else if (cameraController != null)
+            {
+                Debug.LogWarning("[GameManager] Camera could not be set - missing player objects");
+            }
+            
+            // Link to UI (always call even if player1/player2 are null - UIManager will find PlayerMovement2D)
+            if (uiManager != null)
+            {
+                uiManager.InitializeWithPlayers(player1, player2);
+                Debug.Log("[GameManager] UIManager.InitializeWithPlayers() called");
+            }
+            else
+            {
+                Debug.LogError("[GameManager] UIManager is NULL! Cannot initialize health bars!");
             }
             
             // Start with intro
