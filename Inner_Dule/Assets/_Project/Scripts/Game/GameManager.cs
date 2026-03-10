@@ -51,6 +51,7 @@ namespace InnerDuel
         private void Start()
         {
             InitializeGame();
+            StartGameplay();
         }
         
         private void Update()
@@ -73,85 +74,87 @@ namespace InnerDuel
         {
             Debug.Log("[InnerDuel] InitializeGame started.");
 
-            // Declare player objects upfront to avoid redefinition
+            // Nếu đã gán sẵn player trong scene (Inspector) thì dùng luôn, không spawn lại
+            if (player1 != null && player2 != null)
+            {
+                Debug.Log("[InnerDuel] Using pre-placed players from scene.");
+
+                // Đảm bảo layer & opponentLayer đúng
+                SetCharacterLayers();
+                player1.opponentLayer = LayerMask.GetMask("Player2");
+                player2.opponentLayer = LayerMask.GetMask("Player1");
+
+                // Link camera nếu có
+                if (cameraController != null)
+                {
+                    cameraController.SetTargets(player1.transform, player2.transform);
+                }
+
+                // Link UI nếu có
+                if (uiManager != null)
+                {
+                    uiManager.InitializeWithPlayers(player1, player2);
+                }
+
+                return;
+            }
+
             GameObject p1Obj = null;
             GameObject p2Obj = null;
 
-            // Dùng dữ liệu từ màn hình chọn tướng nếu có
-            CharacterType p1Type = InnerDuel.UI.SelectionData.P1_Type;
-            CharacterType p2Type = InnerDuel.UI.SelectionData.P2_Type;
+            // TODO: đọc từ màn hình chọn tướng
+            CharacterType p1Type = CharacterType.Discipline;
+            CharacterType p2Type = CharacterType.Spontaneity;
 
-            // Kiểm tra xem có player nào "đi lạc" trong scene không trước khi spawn
-            if (player1 != null || player2 != null)
-            {
-                Debug.LogWarning($"[InnerDuel] Pre-existing players found in scene before spawning: P1: {player1 != null}, P2: {player2 != null}. These will be replaced by newly spawned characters.");
-            }
-
-            // Luôn ưu tiên spawn nhân vật mới từ Factory dựa trên SelectionData
+            // Spawn P1
             Debug.Log($"[InnerDuel] Spawning P1: {p1Type}");
             p1Obj = CharacterFactory.Instance.CreateCharacter(p1Type, new Vector3(-5f, 0f, 0f), 1);
-            if (p1Obj != null) 
+            if (p1Obj != null)
             {
                 player1 = p1Obj.GetComponent<InnerCharacterController>();
+                playerMovement1 = p1Obj.GetComponent<PlayerMovement2D>();
             }
-            else 
+            else
             {
                 Debug.LogError("[InnerDuel] Failed to spawn P1 via Factory!");
             }
 
-            
-            // Still missing? Spawn defaults from Factory
-            if (player1 == null)
+            // Spawn P2
+            Debug.Log($"[InnerDuel] Spawning P2: {p2Type}");
+            p2Obj = CharacterFactory.Instance.CreateCharacter(p2Type, new Vector3(5f, 0f, 0f), 2);
+            if (p2Obj != null)
             {
-                Debug.Log("[InnerDuel] Auto-spawning P1: Logic");
-                p1Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Logic, new Vector3(-5f, 0f, 0f), 1);
-                if (p1Obj != null)
-                {
-                    player1 = p1Obj.GetComponent<InnerCharacterController>();
-                    playerMovement1 = p1Obj.GetComponent<PlayerMovement2D>();
-                }
+                player2 = p2Obj.GetComponent<InnerCharacterController>();
+                playerMovement2 = p2Obj.GetComponent<PlayerMovement2D>();
+            }
+            else
+            {
+                Debug.LogError("[InnerDuel] Failed to spawn P2 via Factory!");
             }
 
-            // Fallback: Nếu spawn thất bại hoàn toàn mới thử Recover
+            // Nếu vì lý do gì đó mà vẫn chưa có, thử Recover
             if (player1 == null || player2 == null)
             {
-                Debug.Log("[InnerDuel] Auto-spawning P2: Creativity");
-                p2Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Creativity, new Vector3(5f, 0f, 0f), 2);
-                if (p2Obj != null)
-                {
-                    player2 = p2Obj.GetComponent<InnerCharacterController>();
-                    playerMovement2 = p2Obj.GetComponent<PlayerMovement2D>();
-                }
+                Debug.LogWarning("[InnerDuel] InitializeGame: one or both players are null after spawn, trying RecoverPlayers().");
+                RecoverPlayers();
             }
 
             // Setup character layers and basic settings
             SetCharacterLayers();
-            
+
             // Setup opponent references
             if (player1 != null && player2 != null)
             {
                 player1.opponentLayer = LayerMask.GetMask("Player2");
                 player2.opponentLayer = LayerMask.GetMask("Player1");
             }
-            
-            // Get player GameObjects for camera (works with both controller types)
+
+            // Get player GameObjects for camera
             if (p1Obj == null) p1Obj = player1?.gameObject;
             if (p2Obj == null) p2Obj = player2?.gameObject;
-            
-            // Fallback: find any objects with PlayerMovement2D if InnerCharacterController not available
-            if (p1Obj == null || p2Obj == null)
-            {
-                var allMovements = GameObject.FindObjectsOfType<PlayerMovement2D>();
-                foreach (var m in allMovements)
-                {
-                    if (m.playerID == 1 && p1Obj == null) p1Obj = m.gameObject;
-                    if (m.playerID == 2 && p2Obj == null) p2Obj = m.gameObject;
-                }
-            }
 
-            // LINKING PHASE
             Debug.Log($"[GameManager] Linking phase: P1={p1Obj?.name}, P2={p2Obj?.name}");
-            
+
             // Link to Camera
             if (cameraController != null)
             {
@@ -163,7 +166,7 @@ namespace InnerDuel
                 else if (p1Obj != null || p2Obj != null)
                 {
                     Transform target = p1Obj != null ? p1Obj.transform : p2Obj.transform;
-                    cameraController.SetTargets(target, target); // Focus on the only available player
+                    cameraController.SetTargets(target, target);
                     Debug.LogWarning($"[GameManager] Camera focused on single player: {target.name}");
                 }
                 else
@@ -171,8 +174,8 @@ namespace InnerDuel
                     Debug.LogError("[GameManager] Camera could not be set - no player objects found!");
                 }
             }
-            
-            // Link to UI (always call even if player1/player2 are null - UIManager will find PlayerMovement2D)
+
+            // Link to UI
             if (uiManager != null)
             {
                 uiManager.InitializeWithPlayers(player1, player2);
@@ -182,8 +185,7 @@ namespace InnerDuel
             {
                 Debug.LogError("[GameManager] UIManager is NULL! Cannot initialize health bars!");
             }
-            
-            // Start with intro
+
             StartIntro();
         }
         

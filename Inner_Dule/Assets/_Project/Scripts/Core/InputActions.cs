@@ -16,13 +16,25 @@ namespace InnerDuel.Input
             Player2 = new InputActionMap("Player2");
             
             // Setup Player 1 actions
-            Player1.AddAction("Move", InputActionType.Value, "<Keyboard>/wasd");
+            var p1Move = Player1.AddAction("Move", InputActionType.Value);
+            p1Move.expectedControlType = "Vector2";
+            var p1MoveComposite = p1Move.AddCompositeBinding("2DVector");
+            p1MoveComposite.With("Up", "<Keyboard>/w");
+            p1MoveComposite.With("Down", "<Keyboard>/s");
+            p1MoveComposite.With("Left", "<Keyboard>/a");
+            p1MoveComposite.With("Right", "<Keyboard>/d");
             Player1.AddAction("Attack", InputActionType.Button, "<Keyboard>/space");
             Player1.AddAction("Block", InputActionType.Button, "<Keyboard>/leftShift");
             Player1.AddAction("Dash", InputActionType.Button, "<Keyboard>/leftCtrl");
             
             // Setup Player 2 actions
-            Player2.AddAction("Move", InputActionType.Value, "<Keyboard>/arrows");
+            var p2Move = Player2.AddAction("Move", InputActionType.Value);
+            p2Move.expectedControlType = "Vector2";
+            var p2MoveComposite = p2Move.AddCompositeBinding("2DVector");
+            p2MoveComposite.With("Up", "<Keyboard>/upArrow");
+            p2MoveComposite.With("Down", "<Keyboard>/downArrow");
+            p2MoveComposite.With("Left", "<Keyboard>/leftArrow");
+            p2MoveComposite.With("Right", "<Keyboard>/rightArrow");
             Player2.AddAction("Attack", InputActionType.Button, "<Keyboard>/rightShift");
             Player2.AddAction("Block", InputActionType.Button, "<Keyboard>/rightCtrl");
             Player2.AddAction("Dash", InputActionType.Button, "<Keyboard>/enter");

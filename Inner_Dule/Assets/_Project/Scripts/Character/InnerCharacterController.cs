@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using InnerDuel;
+using InnerDuel.Input;
 
 namespace InnerDuel.Characters
 {
@@ -37,6 +38,9 @@ namespace InnerDuel.Characters
         // Movement
         private Vector2 moveInput;
         private Vector2 lastMoveDirection;
+
+        // Input fallback (when PlayerInput callbacks aren't wired)
+        private InputManager inputManager;
         
         // Timers
         private float attackCooldown = 0f;
@@ -47,6 +51,13 @@ namespace InnerDuel.Characters
         private float berserkTimer = 0f;
         private bool isInBerserkMode = false;
         private bool hasBerserkParam = false;
+
+        // Animator parameter presence cache
+        private bool hasMoveSpeedParam;
+        private bool hasIsAttackingParam;
+        private bool hasIsBlockingParam;
+        private bool hasIsDeadParam;
+        private bool hasIsDeadLowercaseParam;
         
         private float invincibilityDuration = 0.2f;
         private float invincibilityTimer = 0f;
@@ -68,6 +79,9 @@ namespace InnerDuel.Characters
             animator = GetComponent<Animator>();
             spriteRenderer = GetComponent<SpriteRenderer>();
             statusEffectManager = GetComponent<InnerDuel.Core.StatusEffects.StatusEffectManager>();
+
+            // Optional: scene-level input manager fallback
+            inputManager = InputManager.InstanceSafe();
             
             // Auto-add StatusEffectManager if missing
             if (statusEffectManager == null)
@@ -77,10 +91,30 @@ namespace InnerDuel.Characters
             
             if (animator != null)
             {
-                // Check if parameters exist to avoid warnings
-                foreach (AnimatorControllerParameter param in animator.parameters)
+                // Cache animator parameters to avoid warnings when they don't exist
+                foreach (var param in animator.parameters)
                 {
-                    if (param.name == "IsBerserk") hasBerserkParam = true;
+                    switch (param.name)
+                    {
+                        case "MoveSpeed":
+                            hasMoveSpeedParam = param.type == AnimatorControllerParameterType.Float;
+                            break;
+                        case "IsAttacking":
+                            hasIsAttackingParam = param.type == AnimatorControllerParameterType.Bool;
+                            break;
+                        case "IsBlocking":
+                            hasIsBlockingParam = param.type == AnimatorControllerParameterType.Bool;
+                            break;
+                        case "IsDead":
+                            hasIsDeadParam = param.type == AnimatorControllerParameterType.Bool;
+                            break;
+                        case "isDead":
+                            hasIsDeadLowercaseParam = param.type == AnimatorControllerParameterType.Bool;
+                            break;
+                        case "IsBerserk":
+                            hasBerserkParam = param.type == AnimatorControllerParameterType.Bool;
+                            break;
+                    }
                 }
             }
             
@@ -143,11 +177,52 @@ namespace InnerDuel.Characters
             if (isDead || characterData == null) return;
             
             UpdateTimers();
+            PollInputFallback();
             HandleMovement();
             HandleAbilities();
             UpdateAnimator();
 
             foreach (var ability in abilities) ability.OnUpdate();
+        }
+
+        private void PollInputFallback()
+        {
+            // If PlayerInput is properly wired, the OnMove/OnAttack/... callbacks will run and
+            // this fallback will simply mirror the same state without breaking anything.
+            if (inputManager == null)
+            {
+                inputManager = InputManager.InstanceSafe();
+                if (inputManager == null) return;
+            }
+
+            // Movement
+            moveInput = inputManager.GetMoveInput(playerID);
+
+            // Combat inputs (mirror existing callback behavior)
+            if (statusEffectManager != null && statusEffectManager.HasEffect("Stun")) return;
+
+            if (inputManager.GetButtonDown(playerID, "Attack"))
+            {
+                if (!isDead && !isAttacking && attackCooldown <= 0) Attack();
+            }
+
+            if (characterData != null && characterData.canDash && inputManager.GetButtonDown(playerID, "Dash"))
+            {
+                if (!isDead && !isDashing && dashCooldown <= 0) Dash();
+            }
+
+            if (characterData != null && characterData.canBlock)
+            {
+                bool blockHeld = inputManager.GetButton(playerID, "Block");
+                if (blockHeld)
+                {
+                    if (!isDead && !isBlocking && blockCooldown <= 0) StartBlocking();
+                }
+                else
+                {
+                    if (isBlocking) StopBlocking();
+                }
+            }
         }
         
         private void UpdateTimers()
@@ -199,11 +274,37 @@ namespace InnerDuel.Characters
         
         private void UpdateAnimator()
         {
-            animator.SetFloat("MoveSpeed", rb.velocity.magnitude);
-            animator.SetBool("IsAttacking", isAttacking);
-            animator.SetBool("IsBlocking", isBlocking);
-            animator.SetBool("IsDead", isDead);
-            if (hasBerserkParam) animator.SetBool("IsBerserk", isInBerserkMode);
+            if (animator == null || animator.runtimeAnimatorController == null || rb == null)
+                return;
+
+            if (hasMoveSpeedParam)
+            {
+                animator.SetFloat("MoveSpeed", rb.velocity.magnitude);
+            }
+
+            if (hasIsAttackingParam)
+            {
+                animator.SetBool("IsAttacking", isAttacking);
+            }
+
+            if (hasIsBlockingParam)
+            {
+                animator.SetBool("IsBlocking", isBlocking);
+            }
+
+            if (hasIsDeadParam)
+            {
+                animator.SetBool("IsDead", isDead);
+            }
+            else if (hasIsDeadLowercaseParam)
+            {
+                animator.SetBool("isDead", isDead);
+            }
+
+            if (hasBerserkParam)
+            {
+                animator.SetBool("IsBerserk", isInBerserkMode);
+            }
         }
         
         public void OnMove(InputAction.CallbackContext context)
@@ -399,8 +500,18 @@ namespace InnerDuel.Characters
             canMove = false;
             rb.velocity = Vector2.zero;
             
-            // Set isDead bool instead of trigger to prevent loops
-            animator.SetBool("isDead", true);
+            // Set isDead parameter for death animation (support both naming variants)
+            if (animator != null)
+            {
+                if (hasIsDeadParam)
+                {
+                    animator.SetBool("IsDead", true);
+                }
+                else if (hasIsDeadLowercaseParam)
+                {
+                    animator.SetBool("isDead", true);
+                }
+            }
             
             // Notify game manager
             GameManager.Instance.OnCharacterDied(this);
