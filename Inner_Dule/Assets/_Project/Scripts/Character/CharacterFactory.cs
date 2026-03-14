@@ -198,11 +198,20 @@ namespace InnerDuel.Characters
                 case CharacterType.Discipline:
                     data.characterName = "Kỷ Luật (The Warden) [Fallback]";
                     data.maxHealth = 150f;
-                    data.moveSpeed = 3f;
+                    data.moveSpeed = 4f;
                     data.defense = 15f;
+                    
+                    data.jumpForce = 12f;
+                    data.airControlMultiplier = 0.5f;
+                    
                     data.attackDamage = 20f;
                     data.attackRange = 1.3f;
                     data.attackCooldown = 0.8f;
+                    
+                    data.attack1Damage = 15f; data.attack1Range = 1.3f; data.attack1Cooldown = 0.5f;
+                    data.attack2Damage = 20f; data.attack2Range = 1.4f; data.attack2Cooldown = 1.0f;
+                    data.attack3Damage = 25f; data.attack3Range = 1.5f; data.attack3Cooldown = 1.5f;
+                    
                     data.mainColor = new Color(0.2f, 0.4f, 1f);
                     data.effectColor = Color.yellow;
                     data.canBlock = true;
@@ -211,12 +220,23 @@ namespace InnerDuel.Characters
                     
                 case CharacterType.Spontaneity:
                     data.characterName = "Ngẫu Hứng (The Maverick) [Fallback]";
-                    data.maxHealth = 80f;
+                    data.maxHealth = 100f;
                     data.moveSpeed = 7.5f;
                     data.defense = 2f;
+                    
+                    data.jumpForce = 14f;
+                    data.airControlMultiplier = 0.9f;
+                    
                     data.attackDamage = 12f;
                     data.attackRange = 1.1f;
                     data.attackCooldown = 0.35f;
+                    
+                    data.attack1Damage = 10f; data.attack1Range = 1.1f; data.attack1Cooldown = 0.3f;
+                    data.attack2Damage = 12f; data.attack2Range = 1.2f; data.attack2Cooldown = 0.5f;
+                    data.attack3Damage = 15f; data.attack3Range = 1.3f; data.attack3Cooldown = 0.8f;
+                    
+                    data.attack3LeapForce = new Vector2(8f, 5f);
+                    
                     data.dashSpeedMultiplier = 4f;
                     data.dashDuration = 0.25f;
                     data.mainColor = Color.white;
@@ -229,6 +249,10 @@ namespace InnerDuel.Characters
                     data.maxHealth = 100f;
                     data.moveSpeed = 5f;
                     data.attackDamage = 10f;
+                    
+                    data.attack1Damage = 10f; data.attack1Range = 1.2f; data.attack1Cooldown = 0.5f;
+                    data.attack2Damage = 12f; data.attack2Range = 1.4f; data.attack2Cooldown = 0.8f;
+                    data.attack3Damage = 15f; data.attack3Range = 1.6f; data.attack3Cooldown = 1.2f;
                     break;
             }
             

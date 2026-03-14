@@ -23,27 +23,31 @@ namespace InnerDuel.Input
             p1MoveComposite.With("Down", "<Keyboard>/s");
             p1MoveComposite.With("Left", "<Keyboard>/a");
             p1MoveComposite.With("Right", "<Keyboard>/d");
-            Player1.AddAction("Attack", InputActionType.Button, "<Keyboard>/space");
-            Player1.AddAction("Block", InputActionType.Button, "<Keyboard>/leftShift");
-            Player1.AddAction("Dash", InputActionType.Button, "<Keyboard>/leftCtrl");
-            Player1.AddAction("Skill1", InputActionType.Button, "<Keyboard>/j");
-            Player1.AddAction("Skill2", InputActionType.Button, "<Keyboard>/k");
-            Player1.AddAction("Skill3", InputActionType.Button, "<Keyboard>/l");
+            
+            Player1.AddAction("Jump", InputActionType.Button, "<Keyboard>/space");
+            Player1.AddAction("Block", InputActionType.Button, "<Keyboard>/s"); // Down/S is often block or crouch, let's explicit button for now or logic
+            Player1.AddAction("Dash", InputActionType.Button, "<Keyboard>/leftShift");
+            
+            Player1.AddAction("Attack1", InputActionType.Button, "<Keyboard>/j");
+            Player1.AddAction("Attack2", InputActionType.Button, "<Keyboard>/k");
+            Player1.AddAction("Attack3", InputActionType.Button, "<Keyboard>/l");
             
             // Setup Player 2 actions
             var p2Move = Player2.AddAction("Move", InputActionType.Value);
             p2Move.expectedControlType = "Vector2";
             var p2MoveComposite = p2Move.AddCompositeBinding("2DVector");
-            p2MoveComposite.With("Up", "<Keyboard>/upArrow");
+            p2MoveComposite.With("Up", "<Keyboard>/upArrow"); // Up is also jump in some games, but we have explicit jump
             p2MoveComposite.With("Down", "<Keyboard>/downArrow");
             p2MoveComposite.With("Left", "<Keyboard>/leftArrow");
             p2MoveComposite.With("Right", "<Keyboard>/rightArrow");
-            Player2.AddAction("Attack", InputActionType.Button, "<Keyboard>/rightShift");
-            Player2.AddAction("Block", InputActionType.Button, "<Keyboard>/rightCtrl");
-            Player2.AddAction("Dash", InputActionType.Button, "<Keyboard>/enter");
-            Player2.AddAction("Skill1", InputActionType.Button, "<Keyboard>/numpad1");
-            Player2.AddAction("Skill2", InputActionType.Button, "<Keyboard>/numpad2");
-            Player2.AddAction("Skill3", InputActionType.Button, "<Keyboard>/numpad3");
+            
+            Player2.AddAction("Jump", InputActionType.Button, "<Keyboard>/upArrow"); 
+            Player2.AddAction("Block", InputActionType.Button, "<Keyboard>/downArrow");
+            Player2.AddAction("Dash", InputActionType.Button, "<Keyboard>/rightShift");
+            
+            Player2.AddAction("Attack1", InputActionType.Button, "<Keyboard>/numpad1");
+            Player2.AddAction("Attack2", InputActionType.Button, "<Keyboard>/numpad2");
+            Player2.AddAction("Attack3", InputActionType.Button, "<Keyboard>/numpad3");
             
             // Enable all actions
             Player1.Enable();

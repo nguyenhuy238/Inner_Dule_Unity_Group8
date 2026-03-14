@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using InnerDuel;
 using InnerDuel.Input;
+using System.Collections;
 
 namespace InnerDuel.Characters
 {
@@ -11,14 +12,26 @@ namespace InnerDuel.Characters
     {
         [Header("Character Setup")]
         public CharacterData characterData;
-        public int playerID = 1; // Player 1 or Player 2
+        [Tooltip("1 for Player1, 2 for Player2")] 
+        public int playerID = 1;
         
-        [Header("Combat")]
-        public Transform attackPoint;
-        public float attackRange = 1f;
+        [Header("Movement Settings (Overrides Data if needed)")]
+        public float moveSpeedMultiplier = 1f;
+        public float jumpForceMultiplier = 1f;
+
+        [Header("Combat References")]
+        public Transform attack1Point;
+        public Transform attack2Point;
+        public Transform attack3Point;
+        public Transform projectileSpawnPoint;
         public LayerMask opponentLayer;
         
-        [Header("Health")]
+        [Header("Ground Check")]
+        public Transform groundCheck;
+        public float groundCheckRadius = 0.2f;
+        public LayerMask groundLayer;
+        
+        [Header("Visuals")]
         public HealthBar healthBar;
         
         // Components
@@ -26,592 +39,628 @@ namespace InnerDuel.Characters
         private Animator animator;
         private SpriteRenderer spriteRenderer;
         private InnerDuel.Core.StatusEffects.StatusEffectManager statusEffectManager;
+        private InputManager inputManager;
         
         // State variables
         private float currentHealth;
         private bool isDead = false;
+        private bool isGrounded = false;
         private bool isAttacking = false;
         private bool isBlocking = false;
         private bool isDashing = false;
         private bool canMove = true;
-        
-        // Movement
-        private Vector2 moveInput;
-        private Vector2 lastMoveDirection;
-
-        // Input fallback (when PlayerInput callbacks aren't wired)
-        private InputManager inputManager;
-        
-        // Timers
-        private float attackCooldown = 0f;
-        private float dashCooldown = 0f;
-        private float blockCooldown = 0f;
-        
-        // Special abilities
-        private float berserkTimer = 0f;
-        private bool isInBerserkMode = false;
-        private bool hasBerserkParam = false;
-
-        // Animator parameter presence cache
-        private bool hasMoveSpeedParam;
-        private bool hasIsAttackingParam;
-        private bool hasIsBlockingParam;
-        private bool hasIsDeadParam;
-        private bool hasIsDeadLowercaseParam;
-        private bool hasAttackTrigger;
-        private bool hasSkill1Trigger;
-        private bool hasSkill2Trigger;
-        private bool hasSkill3Trigger;
-        private bool hasSkill2NewTrigger;
-        private bool hasSkill3NewTrigger;
-        
-        private float invincibilityDuration = 0.2f;
-        private float invincibilityTimer = 0f;
-        
-        // Counters & Windows
+        private float controlLockUntil = 0f;
         private float lastBlockStartTime = 0f;
-        
-        // Ability System
-        private System.Collections.Generic.List<BaseCharacterAbility> abilities = new System.Collections.Generic.List<BaseCharacterAbility>();
-        
-        // Properties for Abilities
-        public bool IsDashing => isDashing;
+
+        // Public Properties for Abilities & UI
         public bool IsBlocking => isBlocking;
+        public bool IsDashing => isDashing;
+        public float CurrentHealth => currentHealth;
+        public float MaxHealth => characterData != null ? characterData.maxHealth : 100f;
         public float LastBlockStartTime => lastBlockStartTime;
         
+        // Input Buffers
+        private Vector2 moveInput;
+        private bool jumpQueued;
+        
+        // Timers
+        private float attack1Cooldown = 0f;
+        private float attack2Cooldown = 0f;
+        private float attack3Cooldown = 0f;
+        private float dashCooldown = 0f;
+        private float blockCooldown = 0f;
+        private float invincibilityTimer = 0f;
+        private float invincibilityDuration = 0.2f;
+        
+        // Abilities list
+        private System.Collections.Generic.List<BaseCharacterAbility> abilities = new System.Collections.Generic.List<BaseCharacterAbility>();
+
+        // Animator Parameters Cache
+        private int animMoveSpeed;
+        private int animIsGrounded;
+        private int animVerticalSpeed;
+        private int animIsAttacking;
+        private int animIsBlocking;
+        private int animIsDead;
+        private int animHit;
+        private int animAttack1;
+        private int animAttack2;
+        private int animAttack3;
+
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
             animator = GetComponent<Animator>();
             spriteRenderer = GetComponent<SpriteRenderer>();
             statusEffectManager = GetComponent<InnerDuel.Core.StatusEffects.StatusEffectManager>();
-
-            // Optional: scene-level input manager fallback
-            inputManager = InputManager.InstanceSafe();
             
-            // Auto-add StatusEffectManager if missing
+            // Ensure StatusEffectManager
             if (statusEffectManager == null)
-            {
                 statusEffectManager = gameObject.AddComponent<InnerDuel.Core.StatusEffects.StatusEffectManager>();
-            }
+
+            // Auto-setup Transforms if missing
+            SetupTransforms();
             
-            if (animator != null)
-            {
-                // Cache animator parameters to avoid warnings when they don't exist
-                foreach (var param in animator.parameters)
-                {
-                    switch (param.name)
-                    {
-                        case "MoveSpeed":
-                            hasMoveSpeedParam = param.type == AnimatorControllerParameterType.Float;
-                            break;
-                        case "IsAttacking":
-                            hasIsAttackingParam = param.type == AnimatorControllerParameterType.Bool;
-                            break;
-                        case "IsBlocking":
-                            hasIsBlockingParam = param.type == AnimatorControllerParameterType.Bool;
-                            break;
-                        case "IsDead":
-                            hasIsDeadParam = param.type == AnimatorControllerParameterType.Bool;
-                            break;
-                        case "isDead":
-                            hasIsDeadLowercaseParam = param.type == AnimatorControllerParameterType.Bool;
-                            break;
-                        case "Attack":
-                            hasAttackTrigger = param.type == AnimatorControllerParameterType.Trigger;
-                            break;
-                        case "Skill_1":
-                        case "Skill1":
-                            hasSkill1Trigger = param.type == AnimatorControllerParameterType.Trigger;
-                            break;
-                        case "Skill_2":
-                        case "Skill2":
-                            hasSkill2Trigger = param.type == AnimatorControllerParameterType.Trigger;
-                            break;
-                        case "Skill_3":
-                        case "Skill3":
-                            hasSkill3Trigger = param.type == AnimatorControllerParameterType.Trigger;
-                            break;
-                        case "Skill_2_new":
-                            hasSkill2NewTrigger = param.type == AnimatorControllerParameterType.Trigger;
-                            break;
-                        case "Skill_3_new":
-                            hasSkill3NewTrigger = param.type == AnimatorControllerParameterType.Trigger;
-                            break;
-                        case "IsBerserk":
-                            hasBerserkParam = param.type == AnimatorControllerParameterType.Bool;
-                            break;
-                    }
-                }
-            }
-            
-            // Defensive: Auto-find AttackPoint if missing
-            if (attackPoint == null)
-            {
-                attackPoint = transform.Find("AttackPoint");
-                if (attackPoint == null)
-                {
-                    GameObject ap = new GameObject("AttackPoint");
-                    ap.transform.SetParent(this.transform);
-                    ap.transform.localPosition = new Vector3(1f, 0f, 0f);
-                    attackPoint = ap.transform;
-                    Debug.LogWarning($"[InnerDuel] Auto-assigned missing AttackPoint for {gameObject.name}");
-                }
-            }
-            
+            // Initialize Animation Hashes
+            animMoveSpeed = Animator.StringToHash("MoveSpeed");
+            animIsGrounded = Animator.StringToHash("IsGrounded");
+            animVerticalSpeed = Animator.StringToHash("VerticalSpeed");
+            animIsAttacking = Animator.StringToHash("IsAttacking");
+            animIsBlocking = Animator.StringToHash("IsBlocking");
+            animIsDead = Animator.StringToHash("IsDead");
+            animHit = Animator.StringToHash("Hit");
+            animAttack1 = Animator.StringToHash("Attack1");
+            animAttack2 = Animator.StringToHash("Attack2");
+            animAttack3 = Animator.StringToHash("Attack3");
+
+            // Initialize Data
             if (characterData != null)
             {
                 InitializeFromData();
             }
             else
             {
-                // Note: If spawned via Factory, data is set immediately after Instantiate,
-                // so we don't need to error here, but we should handle it in Start or via setter.
                 currentHealth = 100f;
             }
+        }
+        
+        private void Start()
+        {
+            // Initialize Input Manager
+            inputManager = InputManager.InstanceSafe();
             
+            // Initialize HealthBar
             if (healthBar != null)
             {
                 healthBar.SetMaxHealth(currentHealth);
+                healthBar.SetHealth(currentHealth);
             }
-
-            // Initialize Abilities
+            
+            // Collect Abilities
             abilities.AddRange(GetComponents<BaseCharacterAbility>());
             foreach (var ability in abilities)
             {
                 ability.Initialize(this, characterData);
+            }
+        }
+
+        private void SetupTransforms()
+        {
+            if (groundCheck == null)
+            {
+                var go = new GameObject("GroundCheck");
+                go.transform.SetParent(transform);
+                go.transform.localPosition = new Vector3(0f, -0.6f, 0f);
+                groundCheck = go.transform;
+            }
+
+            if (attack1Point == null)
+            {
+                var go = new GameObject("Attack1Point");
+                go.transform.SetParent(transform);
+                go.transform.localPosition = new Vector3(0.8f, 0f, 0f);
+                attack1Point = go.transform;
+            }
+            
+            if (attack2Point == null)
+            {
+                var go = new GameObject("Attack2Point");
+                go.transform.SetParent(transform);
+                go.transform.localPosition = new Vector3(1.0f, 0f, 0f);
+                attack2Point = go.transform;
+            }
+            
+            if (attack3Point == null)
+            {
+                var go = new GameObject("Attack3Point");
+                go.transform.SetParent(transform);
+                go.transform.localPosition = new Vector3(1.2f, 0.5f, 0f); // Higher/Further
+                attack3Point = go.transform;
+            }
+            
+            if (projectileSpawnPoint == null)
+            {
+                 var go = new GameObject("ProjectileSpawnPoint");
+                go.transform.SetParent(transform);
+                go.transform.localPosition = new Vector3(1.0f, 0.5f, 0f);
+                projectileSpawnPoint = go.transform;
             }
         }
 
         public void InitializeFromData()
         {
             if (characterData == null) return;
-            
             currentHealth = characterData.maxHealth;
             if (healthBar != null) healthBar.SetMaxHealth(currentHealth);
-            
-            // Refresh and initialize abilities
-            abilities.Clear();
-            abilities.AddRange(GetComponents<BaseCharacterAbility>());
-            foreach (var ability in abilities)
-            {
-                ability.Initialize(this, characterData);
-            }
         }
-        
+
         private void Update()
         {
-            if (isDead || characterData == null) return;
-            
-            UpdateTimers();
-            PollInputFallback();
-            HandleMovement();
-            HandleAbilities();
-            UpdateAnimator();
+            if (isDead) return;
 
+            UpdateTimers();
+            HandleInput();
+            UpdateAnimator();
+            
+            // Ability Updates
             foreach (var ability in abilities) ability.OnUpdate();
         }
 
-        private void PollInputFallback()
+        private void FixedUpdate()
         {
-            // If PlayerInput is properly wired, the OnMove/OnAttack/... callbacks will run and
-            // this fallback will simply mirror the same state without breaking anything.
-            if (inputManager == null)
-            {
-                inputManager = InputManager.InstanceSafe();
-                if (inputManager == null) return;
-            }
+            if (isDead) return;
 
-            // Movement
-            moveInput = inputManager.GetMoveInput(playerID);
-
-            // Combat inputs (mirror existing callback behavior)
-            if (statusEffectManager != null && statusEffectManager.HasEffect("Stun")) return;
-
-            if (inputManager.GetButtonDown(playerID, "Attack"))
-            {
-                if (!isDead && !isAttacking && attackCooldown <= 0) Attack();
-            }
-
-            if (inputManager.GetButtonDown(playerID, "Skill1"))
-            {
-                if (!isDead) TriggerSkill(1);
-            }
-            if (inputManager.GetButtonDown(playerID, "Skill2"))
-            {
-                if (!isDead) TriggerSkill(2);
-            }
-            if (inputManager.GetButtonDown(playerID, "Skill3"))
-            {
-                if (!isDead) TriggerSkill(3);
-            }
-
-            if (characterData != null && characterData.canDash && inputManager.GetButtonDown(playerID, "Dash"))
-            {
-                if (!isDead && !isDashing && dashCooldown <= 0) Dash();
-            }
-
-            if (characterData != null && characterData.canBlock)
-            {
-                bool blockHeld = inputManager.GetButton(playerID, "Block");
-                if (blockHeld)
-                {
-                    if (!isDead && !isBlocking && blockCooldown <= 0) StartBlocking();
-                }
-                else
-                {
-                    if (isBlocking) StopBlocking();
-                }
-            }
+            CheckGround();
+            HandleMovement();
         }
-        
+
         private void UpdateTimers()
         {
-            if (attackCooldown > 0) attackCooldown -= Time.deltaTime;
+            if (attack1Cooldown > 0) attack1Cooldown -= Time.deltaTime;
+            if (attack2Cooldown > 0) attack2Cooldown -= Time.deltaTime;
+            if (attack3Cooldown > 0) attack3Cooldown -= Time.deltaTime;
             if (dashCooldown > 0) dashCooldown -= Time.deltaTime;
             if (blockCooldown > 0) blockCooldown -= Time.deltaTime;
             if (invincibilityTimer > 0) invincibilityTimer -= Time.deltaTime;
-            
-            if (berserkTimer > 0)
+        }
+
+        private void HandleInput()
+        {
+            if (inputManager == null) return;
+
+            // Movement Input
+            moveInput = inputManager.GetMoveInput(playerID);
+
+            // Stun Check
+            if (statusEffectManager != null && statusEffectManager.HasEffect("Stun"))
             {
-                berserkTimer -= Time.deltaTime;
-                if (berserkTimer <= 0)
+                moveInput = Vector2.zero;
+                return;
+            }
+
+            // Jump
+            if (inputManager.GetButtonDown(playerID, "Jump") && isGrounded && canMove && !isAttacking && !isBlocking)
+            {
+                jumpQueued = true;
+            }
+
+            // Attacks
+            if (canMove && !isBlocking && !isDashing) // Can attack while moving (air or ground) usually? Let's say yes but it locks movement
+            {
+                if (inputManager.GetButtonDown(playerID, "Attack1") && attack1Cooldown <= 0)
                 {
-                    ExitBerserkMode();
+                    PerformAttack(1);
+                }
+                else if (inputManager.GetButtonDown(playerID, "Attack2") && attack2Cooldown <= 0)
+                {
+                    PerformAttack(2);
+                }
+                else if (inputManager.GetButtonDown(playerID, "Attack3") && attack3Cooldown <= 0)
+                {
+                    PerformAttack(3);
+                }
+            }
+
+            // Dash
+            if (characterData != null && characterData.canDash && inputManager.GetButtonDown(playerID, "Dash"))
+            {
+                if (!isDashing && dashCooldown <= 0 && canMove) PerformDash();
+            }
+
+            // Block
+            if (characterData != null && characterData.canBlock)
+            {
+                bool blockHeld = inputManager.GetButton(playerID, "Block");
+                if (blockHeld && !isAttacking && !isDashing)
+                {
+                    if (!isBlocking) StartBlocking();
+                }
+                else if (!blockHeld && isBlocking)
+                {
+                    StopBlocking();
                 }
             }
         }
-        
+
+        private void CheckGround()
+        {
+            bool wasGrounded = isGrounded;
+            isGrounded = false;
+            
+            Collider2D[] hits = Physics2D.OverlapCircleAll(groundCheck.position, groundCheckRadius, groundLayer);
+            foreach (var hit in hits)
+            {
+                if (hit.gameObject != gameObject && !hit.isTrigger)
+                {
+                    isGrounded = true;
+                    break;
+                }
+            }
+        }
+
         private void HandleMovement()
         {
-            if (!canMove || isAttacking || isDashing) return;
-            
-            // Kiểm tra trạng thái Stun
-            if (statusEffectManager != null && statusEffectManager.HasEffect("Stun"))
+            // Control Lock (e.g. during Leap Attack)
+            if (Time.time < controlLockUntil)
             {
-                rb.velocity = Vector2.zero;
+                // Just apply gravity/drag, don't override X velocity
                 return;
             }
 
-            if (rb == null) return;
-            rb.velocity = moveInput * characterData.moveSpeed;
-            
-            if (moveInput != Vector2.zero)
+            // Stop movement if Blocking or Attacking (unless aerial drift allowed? usually no in strict 2D fighters)
+            // Allow some air control?
+            if (!canMove || isAttacking || isBlocking || isDashing)
             {
-                lastMoveDirection = moveInput.normalized;
-            }
-            
-            // Flip sprite based on direction
-            if (lastMoveDirection.x != 0)
-            {
-                spriteRenderer.flipX = lastMoveDirection.x < 0;
-            }
-        }
-        private void HandleAbilities()
-        {
-            // Logic đặc biệt đã được chuyển sang hệ thống Ability rời (BaseCharacterAbility)
-        }
-        
-        private void UpdateAnimator()
-        {
-            if (animator == null || animator.runtimeAnimatorController == null || rb == null)
+                if (isGrounded)
+                {
+                    rb.velocity = new Vector2(0f, rb.velocity.y);
+                }
+                else
+                {
+                    // Air drag
+                    rb.velocity = new Vector2(rb.velocity.x * 0.95f, rb.velocity.y);
+                }
                 return;
-
-            if (hasMoveSpeedParam)
-            {
-                animator.SetFloat("MoveSpeed", rb.velocity.magnitude);
             }
 
-            if (hasIsAttackingParam)
-            {
-                animator.SetBool("IsAttacking", isAttacking);
-            }
-
-            if (hasIsBlockingParam)
-            {
-                animator.SetBool("IsBlocking", isBlocking);
-            }
-
-            if (hasIsDeadParam)
-            {
-                animator.SetBool("IsDead", isDead);
-            }
-            else if (hasIsDeadLowercaseParam)
-            {
-                animator.SetBool("isDead", isDead);
-            }
-
-            if (hasBerserkParam)
-            {
-                animator.SetBool("IsBerserk", isInBerserkMode);
-            }
-        }
-        
-        public void OnMove(InputAction.CallbackContext context)
-        {
-            moveInput = context.ReadValue<Vector2>();
-        }
-        
-        public void OnAttack(InputAction.CallbackContext context)
-        {
-            if (statusEffectManager != null && statusEffectManager.HasEffect("Stun")) return;
-
-            if (context.performed && !isDead && !isAttacking && attackCooldown <= 0)
-            {
-                Attack();
-            }
-        }
-        
-        public void OnBlock(InputAction.CallbackContext context)
-        {
-            if (!characterData.canBlock || isDead) return;
+            // Calculate Speed
+            float speed = characterData != null ? characterData.moveSpeed : 5f;
+            speed *= moveSpeedMultiplier;
             
-            if (context.performed && blockCooldown <= 0)
+            float targetVelocityX = moveInput.x * speed;
+            
+            // Air Control
+            if (!isGrounded && characterData != null)
             {
-                StartBlocking();
+                // Smoothly interpolate to target, but slower control in air
+                 rb.velocity = new Vector2(Mathf.Lerp(rb.velocity.x, targetVelocityX, characterData.airControlMultiplier), rb.velocity.y);
             }
-            else if (context.canceled)
+            else
             {
-                StopBlocking();
+                // Instant ground movement
+                rb.velocity = new Vector2(targetVelocityX, rb.velocity.y);
+            }
+
+            // Jump
+            if (jumpQueued)
+            {
+                float jumpForce = characterData != null ? characterData.jumpForce : 12f;
+                jumpForce *= jumpForceMultiplier;
+                
+                rb.velocity = new Vector2(rb.velocity.x, 0f); // Reset Y velocity for consistent jump height
+                rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+                jumpQueued = false;
+                isGrounded = false;
+            }
+
+            // Facing Direction
+            if (Mathf.Abs(moveInput.x) > 0.1f)
+            {
+                bool faceRight = moveInput.x > 0;
+                FlipCharacter(faceRight);
             }
         }
-        
-        public void OnDash(InputAction.CallbackContext context)
+
+        private void FlipCharacter(bool faceRight)
         {
-            if (context.performed && characterData.canDash && !isDead && !isDashing && dashCooldown <= 0)
+            // For Player 2, default sprite might be facing Left. 
+            // Standard convention: Sprite faces Right by default.
+            // If sprite faces Left by default, invert logic.
+            // Assuming standard Right-facing sprites:
+            
+            if (spriteRenderer != null)
             {
-                Dash();
+                spriteRenderer.flipX = !faceRight;
             }
+            
+            // Flip Attack Points
+            float direction = faceRight ? 1f : -1f;
+            UpdateAttackPoint(attack1Point, direction);
+            UpdateAttackPoint(attack2Point, direction);
+            UpdateAttackPoint(attack3Point, direction);
+            UpdateAttackPoint(projectileSpawnPoint, direction);
         }
         
-        private void Attack()
+        private void UpdateAttackPoint(Transform point, float direction)
+        {
+            if (point == null) return;
+            Vector3 pos = point.localPosition;
+            point.localPosition = new Vector3(Mathf.Abs(pos.x) * direction, pos.y, pos.z);
+        }
+
+        private void PerformAttack(int attackIndex)
         {
             isAttacking = true;
             canMove = false;
-            attackCooldown = characterData.attackCooldown; // Dùng thông số từ Data
+            rb.velocity = new Vector2(0, rb.velocity.y); // Stop moving when attacking on ground
 
-            if (animator != null && hasAttackTrigger)
-            {
-                animator.SetTrigger("Attack");
-            }
-            
-            // Check for opponents in range
-            Collider2D[] hitOpponents = Physics2D.OverlapCircleAll(attackPoint.position, characterData.attackRange, opponentLayer);
-            
-            foreach (Collider2D opponent in hitOpponents)
-            {
-                var opponentHealth = opponent.GetComponent<InnerCharacterController>();
-                if (opponentHealth != null)
-                {
-                    float damage = isInBerserkMode ? characterData.attackDamage * 1.5f : characterData.attackDamage;
-                    opponentHealth.TakeDamage(damage);
-                }
-            }
-            
-            foreach (var ability in abilities) ability.OnAttack();
-            
-            // Reset attack state
-            Invoke(nameof(ResetAttack), 0.3f);
-        }
+            float damage = 10f;
+            float range = 1f;
+            float cooldown = 0.5f;
+            Transform point = attack1Point;
+            string triggerName = "Attack1";
 
-        private void TriggerSkill(int skillIndex)
-        {
-            if (animator != null)
+            // Load data based on index
+            if (characterData != null)
             {
-                // Support both naming styles and the Spontaneity "*_new" clips
-                switch (skillIndex)
+                switch (attackIndex)
                 {
                     case 1:
-                        if (hasSkill1Trigger) animator.SetTrigger(hasParameterNamed("Skill_1") ? "Skill_1" : "Skill1");
-                        else if (hasParameterNamed("Skill_1")) animator.SetTrigger("Skill_1");
-                        else if (hasParameterNamed("Skill1")) animator.SetTrigger("Skill1");
+                        damage = characterData.attack1Damage;
+                        range = characterData.attack1Range;
+                        cooldown = characterData.attack1Cooldown;
+                        point = attack1Point;
+                        triggerName = "Attack1";
                         break;
                     case 2:
-                        if (hasSkill2Trigger) animator.SetTrigger(hasParameterNamed("Skill_2") ? "Skill_2" : "Skill2");
-                        else if (hasSkill2NewTrigger) animator.SetTrigger("Skill_2_new");
-                        else if (hasParameterNamed("Skill_2")) animator.SetTrigger("Skill_2");
-                        else if (hasParameterNamed("Skill2")) animator.SetTrigger("Skill2");
+                        damage = characterData.attack2Damage;
+                        range = characterData.attack2Range;
+                        cooldown = characterData.attack2Cooldown;
+                        point = attack2Point;
+                        triggerName = "Attack2";
                         break;
                     case 3:
-                        if (hasSkill3Trigger) animator.SetTrigger(hasParameterNamed("Skill_3") ? "Skill_3" : "Skill3");
-                        else if (hasSkill3NewTrigger) animator.SetTrigger("Skill_3_new");
-                        else if (hasParameterNamed("Skill_3")) animator.SetTrigger("Skill_3");
-                        else if (hasParameterNamed("Skill3")) animator.SetTrigger("Skill3");
+                        damage = characterData.attack3Damage;
+                        range = characterData.attack3Range;
+                        cooldown = characterData.attack3Cooldown;
+                        point = attack3Point;
+                        triggerName = "Attack3";
                         break;
                 }
             }
 
-            // Notify abilities (logic/effects can live there)
+            // Set Cooldown
+            switch (attackIndex)
+            {
+                case 1: attack1Cooldown = cooldown; break;
+                case 2: attack2Cooldown = cooldown; break;
+                case 3: attack3Cooldown = cooldown; break;
+            }
+
+            // Animation
+            if (animator != null)
+            {
+                animator.SetTrigger(triggerName);
+                animator.SetBool(animIsAttacking, true);
+            }
+
+            // Notify abilities
             foreach (var ability in abilities)
             {
-                switch (skillIndex)
+                ability.OnAttack();
+                if (attackIndex == 1) ability.OnSkill1();
+                else if (attackIndex == 2) ability.OnSkill2();
+                else if (attackIndex == 3) ability.OnSkill3();
+            }
+            
+            // Special Logic: Leap (Attack 3)
+            if (attackIndex == 3 && characterData != null && characterData.attack3LeapForce != Vector2.zero)
+            {
+                // Leap
+                float dir = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
+                Vector2 force = new Vector2(characterData.attack3LeapForce.x * dir, characterData.attack3LeapForce.y);
+                rb.AddForce(force, ForceMode2D.Impulse);
+                controlLockUntil = Time.time + characterData.attack3ControlLock;
+            }
+
+            // Special Logic: Projectile (Player 2 / Ranged)
+            // Check if we should spawn projectile. 
+            // Simple logic: If prefab exists and it's Attack 1 or 3 (classic shoto/zoning).
+            // Or just check playerID for now to match legacy.
+            bool isProjectile = (characterData != null && characterData.projectilePrefab != null && (attackIndex == 1 || attackIndex == 3) && playerID == 2);
+            
+            if (isProjectile)
+            {
+                StartCoroutine(SpawnProjectileRoutine(0.2f, damage));
+            }
+            else
+            {
+                // Melee Hitbox
+                StartCoroutine(MeleeAttackRoutine(0.2f, point, range, damage));
+            }
+
+            // Reset State
+            float recoveryTime = 0.4f; // Default recovery
+            StartCoroutine(ResetAttackState(recoveryTime));
+        }
+
+        private IEnumerator MeleeAttackRoutine(float delay, Transform point, float range, float damage)
+        {
+            yield return new WaitForSeconds(delay);
+            
+            if (point == null) yield break;
+            
+            Collider2D[] hits = Physics2D.OverlapCircleAll(point.position, range, opponentLayer);
+            foreach (var hit in hits)
+            {
+                // Try InnerCharacterController
+                var target = hit.GetComponent<InnerCharacterController>();
+                if (target != null && !target.isDead)
                 {
-                    case 1: ability.OnSkill1(); break;
-                    case 2: ability.OnSkill2(); break;
-                    case 3: ability.OnSkill3(); break;
+                    target.TakeDamage(damage);
                 }
             }
         }
 
-        private bool hasParameterNamed(string paramName)
+        private IEnumerator SpawnProjectileRoutine(float delay, float damage)
         {
-            if (animator == null) return false;
-            foreach (var p in animator.parameters)
+            yield return new WaitForSeconds(delay);
+            
+            if (characterData != null && characterData.projectilePrefab != null)
             {
-                if (p.name == paramName) return true;
+                GameObject projObj = Instantiate(characterData.projectilePrefab, projectileSpawnPoint.position, Quaternion.identity);
+                
+                // Setup Projectile Component
+                var coreProj = projObj.GetComponent<InnerDuel.Core.Projectile>();
+                if (coreProj != null)
+                {
+                    // Direction
+                    float dirX = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
+                    Vector2 dir = new Vector2(dirX, 0);
+                    coreProj.Initialize(dir, playerID, damage, opponentLayer);
+                }
+                else
+                {
+                    // Legacy/Effects projectile fallback
+                    // Just set velocity if it has RB
+                    var rbProj = projObj.GetComponent<Rigidbody2D>();
+                    if (rbProj != null)
+                    {
+                         float dirX = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
+                         rbProj.velocity = new Vector2(dirX * 15f, 0f);
+                    }
+                }
             }
-            return false;
         }
-        
-        private void ResetAttack()
+
+        private IEnumerator ResetAttackState(float delay)
         {
+            yield return new WaitForSeconds(delay);
             isAttacking = false;
             canMove = true;
+            if (animator != null) animator.SetBool(animIsAttacking, false);
         }
-        
-        private void StartBlocking()
-        {
-            isBlocking = true;
-            canMove = false;
-            blockCooldown = 0.2f;
-            lastBlockStartTime = Time.time;
-            
-            animator.SetBool("IsBlocking", true);
-            foreach (var ability in abilities) ability.OnBlockStart();
-        }
-        
-        private void StopBlocking()
-        {
-            isBlocking = false;
-            canMove = true;
-            foreach (var ability in abilities) ability.OnBlockEnd();
-        }
-        
-        private void Dash()
+
+        private void PerformDash()
         {
             isDashing = true;
             canMove = false;
-            dashCooldown = 1f; 
+            dashCooldown = characterData.dashDuration + 0.5f; // Cooldown > Duration
             
-            // Perform dash
-            Vector2 dashDirection = lastMoveDirection != Vector2.zero ? lastMoveDirection : Vector2.right;
-            rb.velocity = dashDirection * characterData.moveSpeed * characterData.dashSpeedMultiplier;
+            // Dash Force
+            float dir = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
+            float dashSpeed = characterData.moveSpeed * characterData.dashSpeedMultiplier;
             
-            foreach (var ability in abilities) ability.OnDash();
-
-            Invoke(nameof(ResetDash), characterData.dashDuration);
+            rb.velocity = new Vector2(dir * dashSpeed, 0f); // Horizontal Dash
+            
+            StartCoroutine(ResetDashState(characterData.dashDuration));
         }
-        
-        private void ResetDash()
+
+        private IEnumerator ResetDashState(float delay)
         {
+            yield return new WaitForSeconds(delay);
             isDashing = false;
             canMove = true;
             rb.velocity = Vector2.zero;
         }
-        
-        private void EnterBerserkMode()
+
+        private void StartBlocking()
         {
-            isInBerserkMode = true;
-            berserkTimer = 5f;
-            spriteRenderer.color = Color.red;
-            
-            // Increase stats
-            characterData.moveSpeed *= 1.5f;
-            characterData.attackDamage *= 1.5f;
+            isBlocking = true;
+            canMove = false;
+            rb.velocity = Vector2.zero;
+            lastBlockStartTime = Time.time;
+            if (animator != null) animator.SetBool(animIsBlocking, true);
+            foreach (var ability in abilities) ability.OnBlockStart();
         }
-        
-        private void ExitBerserkMode()
+
+        private void StopBlocking()
         {
-            isInBerserkMode = false;
-            spriteRenderer.color = Color.white;
-            
-            // Reset stats
-            characterData.moveSpeed /= 1.5f;
-            characterData.attackDamage /= 1.5f;
+            isBlocking = false;
+            canMove = true;
+            if (animator != null) animator.SetBool(animIsBlocking, false);
+            foreach (var ability in abilities) ability.OnBlockEnd();
         }
-        
+
         public void TakeDamage(float damage)
         {
             if (isDead || invincibilityTimer > 0) return;
-            
-            // Tính toán phòng thủ
-            float finalDamage = Mathf.Max(1f, damage - (characterData.defense * 0.5f));
-            
+
+            // Notify abilities first (for parry/counter logic)
+            foreach (var ability in abilities) ability.OnTakeDamage(damage);
+
+            // Re-check if still alive/valid after ability logic
+            if (isDead) return;
+
+            // Block Logic
             if (isBlocking)
             {
-                // Thông báo tới các Ability để xử lý logic phản đòn hoặc giảm sát thương thêm
-                foreach (var ability in abilities) ability.OnTakeDamage(damage);
-                
-                // Nếu bị Stun hoặc chết trong khi xử lý Ability (ví dụ phản đòn bị lỗi), thoát
-                if (isDead) return;
-
-                finalDamage *= 0.15f; // Block bình thường của Kỷ Luật giảm 85% sát thương
+                damage *= 0.2f; // Block 80% damage
             }
             
-            currentHealth -= finalDamage;
+            currentHealth -= damage;
             invincibilityTimer = invincibilityDuration;
             
-            // Visual feedback
-            if (spriteRenderer != null) StartCoroutine(DamageFlash());
+            if (healthBar != null) healthBar.SetHealth(currentHealth);
             
-            if (healthBar != null)
-            {
-                healthBar.SetHealth(currentHealth);
-            }
+            // Animation
+            if (animator != null) animator.SetTrigger(animHit);
             
+            // Death Check
             if (currentHealth <= 0)
             {
                 Die();
             }
         }
-        
+
         public void TriggerCounterAttack()
         {
             // Reset block
             StopBlocking();
             
-            // Thực hiện đòn đánh tức thì
-            Attack();
+            // Perform instant attack (e.g. Attack 1)
+            PerformAttack(1);
             
-            // Hiệu ứng phản đòn
-            if (InnerDuel.Effects.ParticleEffectsManager.Instance != null)
-                InnerDuel.Effects.ParticleEffectsManager.Instance.PlayEffect("Parry", transform.position, Color.yellow);
+            Debug.Log($"[InnerDuel] {gameObject.name} triggered COUNTER ATTACK!");
         }
-        
-        private System.Collections.IEnumerator DamageFlash()
-        {
-            Color originalColor = spriteRenderer.color;
-            spriteRenderer.color = Color.red;
-            yield return new WaitForSeconds(0.1f);
-            spriteRenderer.color = originalColor;
-        }
-        
+
         private void Die()
         {
-            if (isDead) return; // Already dead
-            
+            if (isDead) return;
             isDead = true;
             canMove = false;
             rb.velocity = Vector2.zero;
             
-            // Set isDead parameter for death animation (support both naming variants)
-            if (animator != null)
-            {
-                if (hasIsDeadParam)
-                {
-                    animator.SetBool("IsDead", true);
-                }
-                else if (hasIsDeadLowercaseParam)
-                {
-                    animator.SetBool("isDead", true);
-                }
-            }
+            if (animator != null) animator.SetBool(animIsDead, true);
             
-            // Notify game manager
             GameManager.Instance.OnCharacterDied(this);
-            foreach (var ability in abilities) ability.OnDie();
         }
-        
+
         public bool IsDead() => isDead;
+
+        private void UpdateAnimator()
+        {
+            if (animator == null) return;
+
+            animator.SetFloat(animMoveSpeed, Mathf.Abs(rb.velocity.x));
+            animator.SetFloat(animVerticalSpeed, rb.velocity.y);
+            animator.SetBool(animIsGrounded, isGrounded);
+        }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            if (groundCheck != null)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+            }
+            if (attack1Point != null)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(attack1Point.position, characterData != null ? characterData.attack1Range : 0.5f);
+            }
+        }
+#endif
     }
 }
