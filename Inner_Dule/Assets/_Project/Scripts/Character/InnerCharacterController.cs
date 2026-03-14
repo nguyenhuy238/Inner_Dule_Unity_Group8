@@ -129,6 +129,12 @@ namespace InnerDuel.Characters
             // Initialize Input Manager
             inputManager = InputManager.InstanceSafe();
             
+            // Warning for missing ground layer
+            if (groundLayer == 0)
+            {
+                Debug.LogError($"[InnerDuel] {gameObject.name} has no groundLayer set! Jump will NOT work. Please set it in the Inspector.");
+            }
+
             // Initialize HealthBar
             if (healthBar != null)
             {
@@ -239,9 +245,18 @@ namespace InnerDuel.Characters
             }
 
             // Jump
-            if (inputManager.GetButtonDown(playerID, "Jump") && isGrounded && canMove && !isAttacking && !isBlocking)
+            bool jumpRequested = inputManager.GetButtonDown(playerID, "Jump");
+            if (jumpRequested)
             {
-                jumpQueued = true;
+                if (isGrounded && canMove && !isAttacking && !isBlocking)
+                {
+                    jumpQueued = true;
+                    Debug.Log($"[InnerDuel] Player {playerID} Jump Queued!");
+                }
+                else
+                {
+                    Debug.Log($"[InnerDuel] Player {playerID} Jump Denied. Grounded: {isGrounded}, CanMove: {canMove}, Attacking: {isAttacking}, Blocking: {isBlocking}");
+                }
             }
 
             // Attacks
@@ -290,16 +305,39 @@ namespace InnerDuel.Characters
             Collider2D[] hits = Physics2D.OverlapCircleAll(groundCheck.position, groundCheckRadius, groundLayer);
             foreach (var hit in hits)
             {
-                if (hit.gameObject != gameObject && !hit.isTrigger)
+                // Ensure we don't ground on ourselves, triggers, or our own child hitboxes
+                if (hit.gameObject != gameObject && !hit.isTrigger && !hit.transform.IsChildOf(transform))
                 {
                     isGrounded = true;
                     break;
                 }
             }
+
+            if (isGrounded && !wasGrounded)
+            {
+                Debug.Log($"[InnerDuel] Player {playerID} Landed.");
+            }
         }
 
         private void HandleMovement()
         {
+            // Jump Execution - check this before early returns to ensure it's not missed 
+            // if an attack/block starts in the same frame as the jump execution.
+            if (jumpQueued)
+            {
+                float jumpForce = characterData != null ? characterData.jumpForce : 12f;
+                jumpForce *= jumpForceMultiplier;
+                
+                rb.velocity = new Vector2(rb.velocity.x, 0f); // Reset Y velocity for consistent jump height
+                rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+                
+                jumpQueued = false;
+                isGrounded = false;
+                
+                if (animator != null) animator.SetBool(animIsGrounded, false);
+                Debug.Log($"[InnerDuel] Player {playerID} Jump Executed!");
+            }
+
             // Control Lock (e.g. during Leap Attack)
             if (Time.time < controlLockUntil)
             {
@@ -339,18 +377,6 @@ namespace InnerDuel.Characters
             {
                 // Instant ground movement
                 rb.velocity = new Vector2(targetVelocityX, rb.velocity.y);
-            }
-
-            // Jump
-            if (jumpQueued)
-            {
-                float jumpForce = characterData != null ? characterData.jumpForce : 12f;
-                jumpForce *= jumpForceMultiplier;
-                
-                rb.velocity = new Vector2(rb.velocity.x, 0f); // Reset Y velocity for consistent jump height
-                rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-                jumpQueued = false;
-                isGrounded = false;
             }
 
             // Facing Direction
