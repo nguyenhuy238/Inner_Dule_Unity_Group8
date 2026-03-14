@@ -77,13 +77,14 @@ namespace InnerDuel
                 RecoverPlayers();
             }
 
-            // Spawn if missing (Factory fallback)
-            if (player1 == null || player2 == null)
+            // Apply Character Data from Character Select if available
+            if (GameData.player1Character != null && player1 != null)
             {
-                 // TODO: Spawn Logic if needed, for now assume scene placement or basic recovery
-                 // If you have a character selection screen, you'd pass data here.
-                 // For now, let's assume players are placed in the scene or RecoverPlayers found them.
-                 Debug.LogWarning("[InnerDuel] Players not assigned in Inspector and Recover failed. Spawning defaults not implemented yet.");
+                player1.characterData = GameData.player1Character;
+            }
+            if (GameData.player2Character != null && player2 != null)
+            {
+                player2.characterData = GameData.player2Character;
             }
 
             // Setup players
@@ -92,6 +93,7 @@ namespace InnerDuel
                 player1.playerID = 1;
                 player1.gameObject.layer = LayerMask.NameToLayer("Player1");
                 player1.opponentLayer = LayerMask.GetMask("Player2");
+                player1.InitializeFromData();
             }
             
             if (player2 != null)
@@ -99,6 +101,7 @@ namespace InnerDuel
                 player2.playerID = 2;
                 player2.gameObject.layer = LayerMask.NameToLayer("Player2");
                 player2.opponentLayer = LayerMask.GetMask("Player1");
+                player2.InitializeFromData();
             }
 
             // Link Camera
@@ -202,15 +205,19 @@ namespace InnerDuel
             if (character == player1)
             {
                 winner = player2;
+                GameData.winnerPlayerID = 2;
+                GameData.winnerName = player2.characterData != null ? player2.characterData.characterName : "P2";
                 Debug.Log("Player 1 Died! Winner: Player 2");
             }
             else
             {
                 winner = player1;
+                GameData.winnerPlayerID = 1;
+                GameData.winnerName = player1.characterData != null ? player1.characterData.characterName : "P1";
                 Debug.Log("Player 2 Died! Winner: Player 1");
             }
         }
-        
+
         public void StartEnding()
         {
             currentState = GameState.Ending;
@@ -228,7 +235,7 @@ namespace InnerDuel
         public void ReturnToMenu()
         {
             currentState = GameState.Menu;
-            SceneManager.LoadScene(0); // Assuming Menu is index 0
+            SceneManager.LoadScene(GameData.ResultScene);
         }
         
         private void RecoverPlayers()
