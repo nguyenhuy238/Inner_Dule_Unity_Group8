@@ -74,6 +74,12 @@ namespace InnerDuel
         {
             Debug.Log("[InnerDuel] InitializeGame started.");
 
+            // Prefer using players already placed in the scene (even if inspector refs are not assigned).
+            if (player1 == null || player2 == null)
+            {
+                RecoverPlayers();
+            }
+
             // Nếu đã gán sẵn player trong scene (Inspector) thì dùng luôn, không spawn lại
             if (player1 != null && player2 != null)
             {
@@ -448,6 +454,32 @@ namespace InnerDuel
                     player2 = controller;
                     foundAny = true;
                     Debug.Log($"[InnerDuel] Recovered Player 2 from object: {controller.gameObject.name}");
+                }
+            }
+
+            // Defensive: if scene has two controllers but both have default/duplicate playerID,
+            // assign by their X position (left = P1, right = P2) to avoid spawning duplicates.
+            if ((player1 == null || player2 == null) && controllers != null && controllers.Length >= 2)
+            {
+                InnerCharacterController left = null;
+                InnerCharacterController right = null;
+
+                foreach (var c in controllers)
+                {
+                    if (left == null || c.transform.position.x < left.transform.position.x) left = c;
+                    if (right == null || c.transform.position.x > right.transform.position.x) right = c;
+                }
+
+                if (left != null && right != null && left != right)
+                {
+                    if (player1 == null) player1 = left;
+                    if (player2 == null) player2 = right;
+
+                    player1.playerID = 1;
+                    player2.playerID = 2;
+                    foundAny = true;
+
+                    Debug.Log($"[InnerDuel] Assigned players by position: P1='{player1.gameObject.name}', P2='{player2.gameObject.name}'");
                 }
             }
 

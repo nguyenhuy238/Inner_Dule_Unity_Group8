@@ -53,13 +53,57 @@ namespace InnerDuel.Camera
             {
                 targetGroup = FindObjectOfType<CinemachineTargetGroup>();
             }
+
+            // Ensure Cinemachine is actually driving the Main Camera at runtime.
+            // Without a CinemachineBrain, Virtual Cameras won't affect the Camera view.
+            if (GetComponent<CinemachineBrain>() == null)
+            {
+                gameObject.AddComponent<CinemachineBrain>();
+            }
             
             // Setup target group if it doesn't exist
             if (targetGroup == null && virtualCamera != null)
             {
                 targetGroup = gameObject.AddComponent<CinemachineTargetGroup>();
                 virtualCamera.Follow = targetGroup.transform;
+                virtualCamera.LookAt = targetGroup.transform;
             }
+
+            EnsureVirtualCameraRig();
+        }
+
+        private void EnsureVirtualCameraRig()
+        {
+            if (virtualCamera == null || targetGroup == null) return;
+
+            // In your scene, vcam can accidentally be set to follow the Main Camera itself.
+            // That makes the camera jump away from gameplay when Cinemachine goes Live.
+            virtualCamera.Follow = targetGroup.transform;
+            virtualCamera.LookAt = targetGroup.transform;
+
+            // Ensure Follow actually moves the camera (Body must not be "Do Nothing").
+            // For 2D, FramingTransposer is a safe default.
+            var framing = virtualCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
+            if (framing == null)
+            {
+                framing = virtualCamera.AddCinemachineComponent<CinemachineFramingTransposer>();
+            }
+
+            framing.m_ScreenX = 0.5f;
+            framing.m_ScreenY = 0.5f;
+            framing.m_DeadZoneWidth = 0f;
+            framing.m_DeadZoneHeight = 0f;
+            framing.m_SoftZoneWidth = 0.8f;
+            framing.m_SoftZoneHeight = 0.8f;
+            framing.m_BiasX = 0f;
+            framing.m_BiasY = 0f;
+            framing.m_XDamping = followSpeed;
+            framing.m_YDamping = followSpeed;
+            framing.m_ZDamping = followSpeed;
+
+            // If vcam transform was authored at a weird Z, keep a standard 2D camera distance.
+            var p = virtualCamera.transform.position;
+            if (p.z > -0.5f) virtualCamera.transform.position = new Vector3(p.x, p.y, -10f);
         }
         
         public void SetTargets(Transform p1, Transform p2)
@@ -83,6 +127,8 @@ namespace InnerDuel.Camera
                     targetGroup.AddMember(player2, 1f, 0f);
                 }
             }
+
+            EnsureVirtualCameraRig();
         }
         
         private void UpdateCameraPosition()

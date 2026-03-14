@@ -58,6 +58,12 @@ namespace InnerDuel.Characters
         private bool hasIsBlockingParam;
         private bool hasIsDeadParam;
         private bool hasIsDeadLowercaseParam;
+        private bool hasAttackTrigger;
+        private bool hasSkill1Trigger;
+        private bool hasSkill2Trigger;
+        private bool hasSkill3Trigger;
+        private bool hasSkill2NewTrigger;
+        private bool hasSkill3NewTrigger;
         
         private float invincibilityDuration = 0.2f;
         private float invincibilityTimer = 0f;
@@ -110,6 +116,27 @@ namespace InnerDuel.Characters
                             break;
                         case "isDead":
                             hasIsDeadLowercaseParam = param.type == AnimatorControllerParameterType.Bool;
+                            break;
+                        case "Attack":
+                            hasAttackTrigger = param.type == AnimatorControllerParameterType.Trigger;
+                            break;
+                        case "Skill_1":
+                        case "Skill1":
+                            hasSkill1Trigger = param.type == AnimatorControllerParameterType.Trigger;
+                            break;
+                        case "Skill_2":
+                        case "Skill2":
+                            hasSkill2Trigger = param.type == AnimatorControllerParameterType.Trigger;
+                            break;
+                        case "Skill_3":
+                        case "Skill3":
+                            hasSkill3Trigger = param.type == AnimatorControllerParameterType.Trigger;
+                            break;
+                        case "Skill_2_new":
+                            hasSkill2NewTrigger = param.type == AnimatorControllerParameterType.Trigger;
+                            break;
+                        case "Skill_3_new":
+                            hasSkill3NewTrigger = param.type == AnimatorControllerParameterType.Trigger;
                             break;
                         case "IsBerserk":
                             hasBerserkParam = param.type == AnimatorControllerParameterType.Bool;
@@ -204,6 +231,19 @@ namespace InnerDuel.Characters
             if (inputManager.GetButtonDown(playerID, "Attack"))
             {
                 if (!isDead && !isAttacking && attackCooldown <= 0) Attack();
+            }
+
+            if (inputManager.GetButtonDown(playerID, "Skill1"))
+            {
+                if (!isDead) TriggerSkill(1);
+            }
+            if (inputManager.GetButtonDown(playerID, "Skill2"))
+            {
+                if (!isDead) TriggerSkill(2);
+            }
+            if (inputManager.GetButtonDown(playerID, "Skill3"))
+            {
+                if (!isDead) TriggerSkill(3);
             }
 
             if (characterData != null && characterData.canDash && inputManager.GetButtonDown(playerID, "Dash"))
@@ -349,6 +389,11 @@ namespace InnerDuel.Characters
             isAttacking = true;
             canMove = false;
             attackCooldown = characterData.attackCooldown; // Dùng thông số từ Data
+
+            if (animator != null && hasAttackTrigger)
+            {
+                animator.SetTrigger("Attack");
+            }
             
             // Check for opponents in range
             Collider2D[] hitOpponents = Physics2D.OverlapCircleAll(attackPoint.position, characterData.attackRange, opponentLayer);
@@ -367,6 +412,55 @@ namespace InnerDuel.Characters
             
             // Reset attack state
             Invoke(nameof(ResetAttack), 0.3f);
+        }
+
+        private void TriggerSkill(int skillIndex)
+        {
+            if (animator != null)
+            {
+                // Support both naming styles and the Spontaneity "*_new" clips
+                switch (skillIndex)
+                {
+                    case 1:
+                        if (hasSkill1Trigger) animator.SetTrigger(hasParameterNamed("Skill_1") ? "Skill_1" : "Skill1");
+                        else if (hasParameterNamed("Skill_1")) animator.SetTrigger("Skill_1");
+                        else if (hasParameterNamed("Skill1")) animator.SetTrigger("Skill1");
+                        break;
+                    case 2:
+                        if (hasSkill2Trigger) animator.SetTrigger(hasParameterNamed("Skill_2") ? "Skill_2" : "Skill2");
+                        else if (hasSkill2NewTrigger) animator.SetTrigger("Skill_2_new");
+                        else if (hasParameterNamed("Skill_2")) animator.SetTrigger("Skill_2");
+                        else if (hasParameterNamed("Skill2")) animator.SetTrigger("Skill2");
+                        break;
+                    case 3:
+                        if (hasSkill3Trigger) animator.SetTrigger(hasParameterNamed("Skill_3") ? "Skill_3" : "Skill3");
+                        else if (hasSkill3NewTrigger) animator.SetTrigger("Skill_3_new");
+                        else if (hasParameterNamed("Skill_3")) animator.SetTrigger("Skill_3");
+                        else if (hasParameterNamed("Skill3")) animator.SetTrigger("Skill3");
+                        break;
+                }
+            }
+
+            // Notify abilities (logic/effects can live there)
+            foreach (var ability in abilities)
+            {
+                switch (skillIndex)
+                {
+                    case 1: ability.OnSkill1(); break;
+                    case 2: ability.OnSkill2(); break;
+                    case 3: ability.OnSkill3(); break;
+                }
+            }
+        }
+
+        private bool hasParameterNamed(string paramName)
+        {
+            if (animator == null) return false;
+            foreach (var p in animator.parameters)
+            {
+                if (p.name == paramName) return true;
+            }
+            return false;
         }
         
         private void ResetAttack()

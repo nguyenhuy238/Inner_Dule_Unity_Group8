@@ -18,6 +18,9 @@ namespace InnerDuel.Characters
         public virtual void OnDash() { }
         public virtual void OnBlockStart() { }
         public virtual void OnBlockEnd() { }
+        public virtual void OnSkill1() { }
+        public virtual void OnSkill2() { }
+        public virtual void OnSkill3() { }
         public virtual void OnTakeDamage(float damage) { }
         public virtual void OnDie() { }
     }

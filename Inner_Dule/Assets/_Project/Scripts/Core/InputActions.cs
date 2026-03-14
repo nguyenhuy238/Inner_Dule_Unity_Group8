@@ -26,6 +26,9 @@ namespace InnerDuel.Input
             Player1.AddAction("Attack", InputActionType.Button, "<Keyboard>/space");
             Player1.AddAction("Block", InputActionType.Button, "<Keyboard>/leftShift");
             Player1.AddAction("Dash", InputActionType.Button, "<Keyboard>/leftCtrl");
+            Player1.AddAction("Skill1", InputActionType.Button, "<Keyboard>/j");
+            Player1.AddAction("Skill2", InputActionType.Button, "<Keyboard>/k");
+            Player1.AddAction("Skill3", InputActionType.Button, "<Keyboard>/l");
             
             // Setup Player 2 actions
             var p2Move = Player2.AddAction("Move", InputActionType.Value);
@@ -38,6 +41,9 @@ namespace InnerDuel.Input
             Player2.AddAction("Attack", InputActionType.Button, "<Keyboard>/rightShift");
             Player2.AddAction("Block", InputActionType.Button, "<Keyboard>/rightCtrl");
             Player2.AddAction("Dash", InputActionType.Button, "<Keyboard>/enter");
+            Player2.AddAction("Skill1", InputActionType.Button, "<Keyboard>/numpad1");
+            Player2.AddAction("Skill2", InputActionType.Button, "<Keyboard>/numpad2");
+            Player2.AddAction("Skill3", InputActionType.Button, "<Keyboard>/numpad3");
             
             // Enable all actions
             Player1.Enable();

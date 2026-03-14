@@ -18,6 +18,9 @@ namespace InnerDuel.Input
         private InputAction attackAction1, attackAction2;
         private InputAction blockAction1, blockAction2;
         private InputAction dashAction1, dashAction2;
+        private InputAction skill1Action1, skill1Action2;
+        private InputAction skill2Action1, skill2Action2;
+        private InputAction skill3Action1, skill3Action2;
         
         public Vector2 MoveInput1 { get; private set; }
         public Vector2 MoveInput2 { get; private set; }
@@ -27,6 +30,12 @@ namespace InnerDuel.Input
         public bool BlockPressed2 { get; private set; }
         public bool DashPressed1 { get; private set; }
         public bool DashPressed2 { get; private set; }
+        public bool Skill1Pressed1 { get; private set; }
+        public bool Skill1Pressed2 { get; private set; }
+        public bool Skill2Pressed1 { get; private set; }
+        public bool Skill2Pressed2 { get; private set; }
+        public bool Skill3Pressed1 { get; private set; }
+        public bool Skill3Pressed2 { get; private set; }
         
         protected override void Awake()
         {
@@ -51,6 +60,12 @@ namespace InnerDuel.Input
             blockAction2 = inputActions.Player2.FindAction("Block");
             dashAction1 = inputActions.Player1.FindAction("Dash");
             dashAction2 = inputActions.Player2.FindAction("Dash");
+            skill1Action1 = inputActions.Player1.FindAction("Skill1");
+            skill1Action2 = inputActions.Player2.FindAction("Skill1");
+            skill2Action1 = inputActions.Player1.FindAction("Skill2");
+            skill2Action2 = inputActions.Player2.FindAction("Skill2");
+            skill3Action1 = inputActions.Player1.FindAction("Skill3");
+            skill3Action2 = inputActions.Player2.FindAction("Skill3");
             
             // Enable input actions
             moveAction1?.Enable();
@@ -61,6 +76,12 @@ namespace InnerDuel.Input
             blockAction2?.Enable();
             dashAction1?.Enable();
             dashAction2?.Enable();
+            skill1Action1?.Enable();
+            skill1Action2?.Enable();
+            skill2Action1?.Enable();
+            skill2Action2?.Enable();
+            skill3Action1?.Enable();
+            skill3Action2?.Enable();
         }
         
         private void Update()
@@ -77,6 +98,13 @@ namespace InnerDuel.Input
             
             DashPressed1 = dashAction1?.WasPressedThisFrame() ?? false;
             DashPressed2 = dashAction2?.WasPressedThisFrame() ?? false;
+
+            Skill1Pressed1 = skill1Action1?.WasPressedThisFrame() ?? false;
+            Skill1Pressed2 = skill1Action2?.WasPressedThisFrame() ?? false;
+            Skill2Pressed1 = skill2Action1?.WasPressedThisFrame() ?? false;
+            Skill2Pressed2 = skill2Action2?.WasPressedThisFrame() ?? false;
+            Skill3Pressed1 = skill3Action1?.WasPressedThisFrame() ?? false;
+            Skill3Pressed2 = skill3Action2?.WasPressedThisFrame() ?? false;
         }
         
         public bool GetButtonDown(int playerID, string actionName)
@@ -88,6 +116,9 @@ namespace InnerDuel.Input
                     {
                         case "Attack": return AttackPressed1;
                         case "Dash": return DashPressed1;
+                        case "Skill1": return Skill1Pressed1;
+                        case "Skill2": return Skill2Pressed1;
+                        case "Skill3": return Skill3Pressed1;
                         default: return false;
                     }
                 case 2:
@@ -95,6 +126,9 @@ namespace InnerDuel.Input
                     {
                         case "Attack": return AttackPressed2;
                         case "Dash": return DashPressed2;
+                        case "Skill1": return Skill1Pressed2;
+                        case "Skill2": return Skill2Pressed2;
+                        case "Skill3": return Skill3Pressed2;
                         default: return false;
                     }
                 default:
