@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using InnerDuel.Audio;
 
 namespace InnerDuel.Characters
 {
@@ -280,6 +281,7 @@ namespace InnerDuel.Characters
                             if (attack1CooldownTimer <= 0)
                             {
                                 if (hasAttack) animator.SetTrigger("Attack");
+                                AudioManager.Instance?.PlayAttackSound(playerID);
                                 PerformMeleeAttack(1); // Attack
                                 attack1CooldownTimer = attack1Cooldown;
                                 StartCoroutine(LockMovementDuringAttack(0.5f));
@@ -296,6 +298,7 @@ namespace InnerDuel.Characters
                             if (attack1CooldownTimer <= 0)
                             {
                                 if (hasSkill1) animator.SetTrigger("Skill1");
+                                AudioManager.Instance?.PlaySkill1Sound(playerID);
                                 PerformMeleeAttack(1); // Skill 1
                                 attack1CooldownTimer = attack1Cooldown;
                                 StartCoroutine(LockMovementDuringAttack(0.5f));
@@ -312,6 +315,7 @@ namespace InnerDuel.Characters
                             if (attack2CooldownTimer <= 0)
                             {
                                 if (hasSkill2) animator.SetTrigger("Skill2");
+                                AudioManager.Instance?.PlaySkill2Sound(playerID);
                                 PerformMeleeAttack(2); // Skill 2
                                 attack2CooldownTimer = attack2Cooldown;
                                 StartCoroutine(LockMovementDuringAttack(0.6f));
@@ -328,6 +332,7 @@ namespace InnerDuel.Characters
                             if (attack3CooldownTimer <= 0)
                             {
                                 if (hasSkill3) animator.SetTrigger("Skill3");
+                                AudioManager.Instance?.PlaySkill3Sound(playerID);
                                 PerformMeleeAttack(3); // Skill 3
                                 attack3CooldownTimer = attack3Cooldown;
                                 StartCoroutine(LockMovementDuringAttack(0.8f));
@@ -383,6 +388,7 @@ namespace InnerDuel.Characters
                                 if (hasAttack) animator.SetTrigger("Attack");
                                 if (hasIsAttacking) animator.SetBool("IsAttacking", true);
                                 if (hasIsActtack) animator.SetBool("IsActtack", true);
+                                AudioManager.Instance?.PlayAttackSound(playerID);
                                 StartCoroutine(ResetAttackBool(0.5f));
                                 StartCoroutine(SpawnFireball(0.2f)); // Delay for animation
                                 PerformMeleeAttack(1); // Attack: melee damage if in range
@@ -401,6 +407,7 @@ namespace InnerDuel.Characters
                             if (attack1CooldownTimer <= 0)
                             {
                                 if (hasSkill1) animator.SetTrigger("Skill1");
+                                AudioManager.Instance?.PlaySkill1Sound(playerID);
                                 PerformMeleeAttack(1); // Skill 1: deal damage
                                 attack1CooldownTimer = attack1Cooldown;
                                 StartCoroutine(LockMovementDuringAttack(0.5f));
@@ -418,6 +425,7 @@ namespace InnerDuel.Characters
                             if (attack2CooldownTimer <= 0)
                             {
                                 if (hasSkill2) animator.SetTrigger("Skill2");
+                                AudioManager.Instance?.PlaySkill2Sound(playerID);
                                 PerformMeleeAttack(2); // Skill 2: deal damage
                                 attack2CooldownTimer = attack2Cooldown;
                                 StartCoroutine(LockMovementDuringAttack(0.6f));
@@ -435,6 +443,7 @@ namespace InnerDuel.Characters
                             if (attack3CooldownTimer <= 0)
                             {
                                 if (hasSkill3) animator.SetTrigger("Skill3");
+                                AudioManager.Instance?.PlaySkill3Sound(playerID);
                                 PerformMeleeAttack(3); // Skill 3: melee damage if in range
                                 attack3CooldownTimer = attack3Cooldown;
                                 StartCoroutine(LockMovementDuringAttack(0.8f));
@@ -524,6 +533,7 @@ namespace InnerDuel.Characters
                     rb.velocity = new Vector2(rb.velocity.x, 0f);
                     rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
                     jumpCount++;
+                    AudioManager.Instance?.PlayJumpSound();
                     Debug.Log($"Player{playerID} JUMPING! Jump {jumpCount}/{maxJumps}, jumpForce={jumpForce}");
                 }
                 else
@@ -541,7 +551,10 @@ namespace InnerDuel.Characters
         private void UpdateAnimatorBooleans()
         {
             if (animator == null) return;
-            bool jumping = !isGrounded;
+            
+            // Better jump detection: use velocity.y to detect if player is in air
+            // This catches the jump immediately when force is applied
+            bool jumping = !isGrounded || rb.velocity.y > 0.1f;
 
             // Update Speed (Float) for running animation - used by both players
             if (hasSpeed) animator.SetFloat("Speed", Mathf.Abs(rb.velocity.x));
@@ -655,8 +668,9 @@ namespace InnerDuel.Characters
                 spawnPos = transform.position + new Vector3(direction * 0.5f, 0.5f, 0f);
             }
             
-            // Spawn fireball
-            GameObject fireball = Instantiate(fireballPrefab, spawnPos, Quaternion.identity);
+            // Spawn fireball (set Z to -1 to render in front of players)
+            Vector3 spawnPosWithZ = new Vector3(spawnPos.x, spawnPos.y, -1f);
+            GameObject fireball = Instantiate(fireballPrefab, spawnPosWithZ, Quaternion.identity);
             
             // Set velocity
             Rigidbody2D rb2d = fireball.GetComponent<Rigidbody2D>();
@@ -709,8 +723,9 @@ namespace InnerDuel.Characters
                 spawnPos = transform.position + new Vector3(direction * 0.5f, 0.5f, 0f);
             }
 
-            // Spawn projectile
-            GameObject projectile = Instantiate(prefab, spawnPos, Quaternion.identity);
+            // Spawn projectile (set Z to -1 to render in front of players)
+            Vector3 spawnPosWithZ = new Vector3(spawnPos.x, spawnPos.y, -1f);
+            GameObject projectile = Instantiate(prefab, spawnPosWithZ, Quaternion.identity);
 
             // Set velocity
             Rigidbody2D rb2d = projectile.GetComponent<Rigidbody2D>();

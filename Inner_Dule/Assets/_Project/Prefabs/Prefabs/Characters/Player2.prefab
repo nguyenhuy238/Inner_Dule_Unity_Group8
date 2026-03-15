@@ -209,11 +209,11 @@ MonoBehaviour:
   fireballPrefab: {fileID: 6294263454781811599, guid: 07847cad0918afc49b9277b4602c548d, type: 3}
   fireballSpawnPoint: {fileID: 5024443750223056287}
   fireballSpeed: 15
-  skill1ProjectilePrefab: {fileID: 7446828701614611975, guid: 5ad59c4da795b444e8a1599823472020, type: 3}
+  skill1ProjectilePrefab: {fileID: 4568681050677186992, guid: 5ad59c4da795b444e8a1599823472020, type: 3}
   skill1ProjectileSpeed: 18
-  skill2ProjectilePrefab: {fileID: 6682150260904238830, guid: 33c2a8ad410af6e4d9d260f03c6a5f00, type: 3}
+  skill2ProjectilePrefab: {fileID: 6796746563862753346, guid: 33c2a8ad410af6e4d9d260f03c6a5f00, type: 3}
   skill2ProjectileSpeed: 20
-  skill3ProjectilePrefab: {fileID: 1376595687647654064, guid: d4b942d131970944491d0d975879f462, type: 3}
+  skill3ProjectilePrefab: {fileID: 4195180057486839920, guid: d4b942d131970944491d0d975879f462, type: 3}
   skill3ProjectileSpeed: 22
   maxHealth: 100
   healthBar: {fileID: 0}
@@ -257,7 +257,7 @@ Transform:
   m_GameObject: {fileID: 1081516210662580636}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.668243, y: 0.65, z: 0}
+  m_LocalPosition: {x: 0.81, y: 2.7, z: 0}
   m_LocalScale: {x: -4.9251375, y: 5, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children: []

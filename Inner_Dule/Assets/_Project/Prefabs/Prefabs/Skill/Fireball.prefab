@@ -76,7 +76,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_Sprite: {fileID: 21300000, guid: 0869b1e96aac6d34cb086976dc7af826, type: 3}
   m_Color: {r: 0.24528301, g: 0.07983268, b: 0.1723662, a: 1}
   m_FlipX: 0
@@ -197,3 +197,5 @@ MonoBehaviour:
   lifetime: 5
   destroyOnHit: 1
   targetTag: Player1
+  playExplosionAnimation: 1
+  explosionAnimationDuration: 0.6
