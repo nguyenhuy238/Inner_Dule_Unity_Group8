@@ -27,10 +27,23 @@ namespace InnerDuel.Characters
         [Tooltip("Optional. If left empty, we will detect by tag 'Ground'.")] public LayerMask groundLayer;
 
         [Header("Projectile (Player 2 Only)")]
-        [Tooltip("Fireball prefab for Player 2's Attack1 and Attack3")]
+        [Tooltip("Fireball prefab for Player 2's Attack1")]
         public GameObject fireballPrefab;
         public Transform fireballSpawnPoint;
         public float fireballSpeed = 15f;
+        
+        [Header("Skill Projectiles (Player 2 Only)")]
+        [Tooltip("Skill1 projectile prefab (Numpad 2)")]
+        public GameObject skill1ProjectilePrefab;
+        public float skill1ProjectileSpeed = 18f;
+        
+        [Tooltip("Skill2 projectile prefab (Numpad 3)")]
+        public GameObject skill2ProjectilePrefab;
+        public float skill2ProjectileSpeed = 20f;
+        
+        [Tooltip("Skill3 projectile prefab (Numpad 4)")]
+        public GameObject skill3ProjectilePrefab;
+        public float skill3ProjectileSpeed = 22f;
 
         [Header("Combat & Health")]
         public float maxHealth = 100f;
@@ -62,12 +75,30 @@ namespace InnerDuel.Characters
         private bool isGrounded;
         private bool jumpQueued;
         private float controlLockUntil;
+        
+        // Jump state
+        private int jumpCount = 0;
+        private const int maxJumps = 2; // Double jump
 
         // Combat state
         private float currentHealth;
         private bool isDead = false;
         private float invincibilityTimer = 0f;
         private float invincibilityDuration = 0.3f;
+        
+        // Defence state
+        private bool isDefending = false;
+        private const float defenceReduction = 0.2f; // Reduce damage to 20% (1/5) when defending
+
+        [Header("Knockback Settings (Kick)")]
+        [Tooltip("Enable knockback when Player2's kick hits an enemy")]
+        public bool enableKickKnockback = true;
+        [Tooltip("Horizontal impulse for kick knockback")]
+        public float kickKnockbackForce = 38f;
+        [Tooltip("How long the target loses control during knockback (seconds)")]
+        public float kickKnockbackDuration = 0.3f;
+        
+        private bool isKnockbacked = false;
         
         // Attack state
         private bool isAttacking = false;
@@ -79,17 +110,16 @@ namespace InnerDuel.Characters
         private const float attack3Cooldown = 8f;  // 8 giây
 
         // Animator parameter presence cache (to tolerate different controllers)
-        private bool hasIsRunning;
-        private bool hasIsRunningPascal;
         private bool hasIsJumping;
         private bool hasIsJumpingPascal;
         private bool hasGrounded;
         private bool hasIsGrounded;
         private bool hasSpeed;
-        private bool hasMoveSpeed;
-        private bool hasAttack1;
-        private bool hasAttack2;
-        private bool hasAttack3;
+        private bool hasAttack;      // Attack trigger (new basic attack)
+        private bool hasSkill1;      // Skill1 trigger
+        private bool hasSkill2;      // Skill2 trigger
+        private bool hasSkill3;      // Skill3 trigger
+        private bool hasDefence;     // IsDefence bool for defence state
         private bool hasIsAttacking;
         private bool hasIsActtack; // Typo variant used in Player2 controller
         private bool hasHit; // Hit trigger for damage animation (Player1)
@@ -154,19 +184,12 @@ namespace InnerDuel.Characters
                 {
                     Debug.Log($"Player{playerID} HealthBar.healthSlider found");
                 }
-                else
-                {
-                    Debug.LogWarning($"Player{playerID} HealthBar.healthSlider is NULL! It will be assigned later.");
-                }
                 
                 healthBar.SetMaxHealth(maxHealth);
                 healthBar.SetHealth(currentHealth);
                 Debug.Log($"Player{playerID} HealthBar initialized");
             }
-            else
-            {
-                Debug.LogWarning($"Player{playerID} HealthBar is NULL in Awake(). UIManager will assign it later.");
-            }
+            // HealthBar will be assigned by UIManager later - no warning needed
 
             // Cache animator parameter availability to avoid mismatches
             if (animator != null)
@@ -175,22 +198,28 @@ namespace InnerDuel.Characters
                 {
                     switch (p.name)
                     {
-                        case "isRunning": hasIsRunning = p.type == AnimatorControllerParameterType.Bool; break;
-                        case "IsRunning": hasIsRunningPascal = p.type == AnimatorControllerParameterType.Bool; break;
                         case "isJumping": hasIsJumping = p.type == AnimatorControllerParameterType.Bool; break;
                         case "IsJumping": hasIsJumpingPascal = p.type == AnimatorControllerParameterType.Bool; break;
                         case "Grounded": hasGrounded = p.type == AnimatorControllerParameterType.Bool; break;
                         case "IsGrounded": hasIsGrounded = p.type == AnimatorControllerParameterType.Bool; break;
                         case "Speed": hasSpeed = p.type == AnimatorControllerParameterType.Float; break;
-                        case "MoveSpeed": hasMoveSpeed = p.type == AnimatorControllerParameterType.Float; break;
-                        case "Attack1": hasAttack1 = p.type == AnimatorControllerParameterType.Trigger; break;
-                        case "Attack2": hasAttack2 = p.type == AnimatorControllerParameterType.Trigger; break;
-                        case "Attack3": hasAttack3 = p.type == AnimatorControllerParameterType.Trigger; break;
+                        // New attack/skill system
+                        case "Attack": hasAttack = p.type == AnimatorControllerParameterType.Trigger; break;
+                        case "Skill1": hasSkill1 = p.type == AnimatorControllerParameterType.Trigger; break;
+                        case "Skill2": hasSkill2 = p.type == AnimatorControllerParameterType.Trigger; break;
+                        case "Skill3": hasSkill3 = p.type == AnimatorControllerParameterType.Trigger; break;
+                        // Defence
+                        case "IsDefence": hasDefence = p.type == AnimatorControllerParameterType.Bool; break;
+                        case "IsDefece": hasDefence = p.type == AnimatorControllerParameterType.Bool; break; // typo variant
+                        // Attack states
                         case "IsAttacking": hasIsAttacking = p.type == AnimatorControllerParameterType.Bool; break;
                         case "IsActtack": hasIsActtack = p.type == AnimatorControllerParameterType.Bool; break;
+                        // Hit/Damage
                         case "Hit": hasHit = p.type == AnimatorControllerParameterType.Trigger; break;
                         case "hit": hasHitLowercase = p.type == AnimatorControllerParameterType.Trigger; break;
+                        // Death
                         case "isDead": hasIsDead = p.type == AnimatorControllerParameterType.Bool; break;
+                        case "IsDeath": hasIsDead = p.type == AnimatorControllerParameterType.Bool; break; // variant
                         case "die": hasDieTrigger = p.type == AnimatorControllerParameterType.Trigger; break;
                     }
                 }
@@ -211,74 +240,108 @@ namespace InnerDuel.Characters
 
             if (Keyboard.current != null)
             {
-                // Player 1: A/D move, Space jump, J/K/L attacks
+                // Player 1: A/D move, W jump, S defend, H attack, J/K/L skills
                 if (playerID == 1)
                 {
                     if (Keyboard.current.aKey.isPressed) x -= 1f;
                     if (Keyboard.current.dKey.isPressed) x += 1f;
 
-                    // Jump on Space
-                    if (Keyboard.current.spaceKey.wasPressedThisFrame)
+                    // Jump on W
+                    if (Keyboard.current.wKey.wasPressedThisFrame)
                     {
                         jumpQueued = true;
                     }
 
-                    // Attacks: J/K/L
+                    // Defence on S (hold)
+                    if (Keyboard.current.sKey.isPressed)
+                    {
+                        isDefending = true;
+                        if (animator != null && hasDefence)
+                        {
+                            // Use the actual parameter name from controller (with typo)
+                            animator.SetBool("IsDefece", true);
+                        }
+                    }
+                    else
+                    {
+                        isDefending = false;
+                        if (animator != null && hasDefence)
+                        {
+                            animator.SetBool("IsDefece", false);
+                        }
+                    }
+
+                    // Attacks and Skills
                     if (animator != null)
                     {
+                        // H = Attack (basic attack)
+                        if (Keyboard.current.hKey != null && Keyboard.current.hKey.wasPressedThisFrame)
+                        {
+                            if (attack1CooldownTimer <= 0)
+                            {
+                                if (hasAttack) animator.SetTrigger("Attack");
+                                PerformMeleeAttack(1); // Attack
+                                attack1CooldownTimer = attack1Cooldown;
+                                StartCoroutine(LockMovementDuringAttack(0.5f));
+                                Debug.Log("Player1 Attack (H) triggered");
+                            }
+                            else
+                            {
+                                Debug.Log($"Player1 Attack on cooldown! {attack1CooldownTimer:F1}s remaining");
+                            }
+                        }
+                        // J = Skill1
                         if (Keyboard.current.jKey != null && Keyboard.current.jKey.wasPressedThisFrame)
                         {
                             if (attack1CooldownTimer <= 0)
                             {
-                                if (hasAttack1) animator.SetTrigger("Attack1");
-                                PerformMeleeAttack(1); // Attack 1
+                                if (hasSkill1) animator.SetTrigger("Skill1");
+                                PerformMeleeAttack(1); // Skill 1
                                 attack1CooldownTimer = attack1Cooldown;
-                                StartCoroutine(LockMovementDuringAttack(0.5f)); // Khóa movement 0.5s
+                                StartCoroutine(LockMovementDuringAttack(0.5f));
+                                Debug.Log("Player1 Skill1 (J) triggered");
                             }
                             else
                             {
-                                Debug.Log($"Player1 Attack1 on cooldown! {attack1CooldownTimer:F1}s remaining");
+                                Debug.Log($"Player1 Skill1 on cooldown! {attack1CooldownTimer:F1}s remaining");
                             }
                         }
+                        // K = Skill2
                         if (Keyboard.current.kKey != null && Keyboard.current.kKey.wasPressedThisFrame)
                         {
                             if (attack2CooldownTimer <= 0)
                             {
-                                if (hasAttack2) animator.SetTrigger("Attack2");
-                                PerformMeleeAttack(2); // Attack 2
+                                if (hasSkill2) animator.SetTrigger("Skill2");
+                                PerformMeleeAttack(2); // Skill 2
                                 attack2CooldownTimer = attack2Cooldown;
-                                StartCoroutine(LockMovementDuringAttack(0.6f)); // Khóa movement 0.6s
+                                StartCoroutine(LockMovementDuringAttack(0.6f));
+                                Debug.Log("Player1 Skill2 (K) triggered");
                             }
                             else
                             {
-                                Debug.Log($"Player1 Attack2 on cooldown! {attack2CooldownTimer:F1}s remaining");
+                                Debug.Log($"Player1 Skill2 on cooldown! {attack2CooldownTimer:F1}s remaining");
                             }
                         }
+                        // L = Skill3 (no leap, just animation)
                         if (Keyboard.current.lKey != null && Keyboard.current.lKey.wasPressedThisFrame)
                         {
                             if (attack3CooldownTimer <= 0)
                             {
-                                if (hasAttack3) animator.SetTrigger("Attack3");
-                                PerformMeleeAttack(3); // Attack 3
+                                if (hasSkill3) animator.SetTrigger("Skill3");
+                                PerformMeleeAttack(3); // Skill 3
                                 attack3CooldownTimer = attack3Cooldown;
-                                StartCoroutine(LockMovementDuringAttack(0.8f)); // Khóa movement 0.8s
-
-                                // Apply leap for Attack3: forward + upward impulse
-                                // Player1: flipX true = facing left, flipX false = facing right
-                                Vector2 leap = new Vector2((sprite != null && sprite.flipX) ? -attack3ForwardImpulse : attack3ForwardImpulse,
-                                                           attack3UpImpulse);
-                                rb.velocity = new Vector2(rb.velocity.x, 0f);
-                                rb.AddForce(leap, ForceMode2D.Impulse);
-                                controlLockUntil = Time.time + attack3ControlLock;
+                                StartCoroutine(LockMovementDuringAttack(0.8f));
+                                Debug.Log("Player1 Skill3 (L) triggered");
+                                // Removed leap effect - just play animation
                             }
                             else
                             {
-                                Debug.Log($"Player1 Attack3 on cooldown! {attack3CooldownTimer:F1}s remaining");
+                                Debug.Log($"Player1 Skill3 on cooldown! {attack3CooldownTimer:F1}s remaining");
                             }
                         }
                     }
                 }
-                // Player 2: Arrow Keys (Left/Right) move, Arrow Up jump, 1/2/3 attacks (3 requires jump)
+                // Player 2: Arrow Keys (Left/Right) move, Up jump, Down defend, 1 attack, 2/3/4 skills
                 else if (playerID == 2)
                 {
                     if (Keyboard.current.leftArrowKey.isPressed) x -= 1f;
@@ -291,72 +354,96 @@ namespace InnerDuel.Characters
                         Debug.Log($"Player2 Jump Queued! isGrounded={isGrounded}");
                     }
 
-                    // Attacks: Numpad 1/2/3
+                    // Defence on Down Arrow (hold)
+                    if (Keyboard.current.downArrowKey.isPressed)
+                    {
+                        isDefending = true;
+                        if (animator != null && hasDefence)
+                        {
+                            animator.SetBool("IsDefence", true);
+                        }
+                    }
+                    else
+                    {
+                        isDefending = false;
+                        if (animator != null && hasDefence)
+                        {
+                            animator.SetBool("IsDefence", false);
+                        }
+                    }
+
+                    // Attacks and Skills: Numpad 1/2/3/4 = Attack, Skill1/2/3
                     if (animator != null)
                     {
-                        // Attack1 (Fireball) - Numpad 1
+                        // Numpad 1 = Attack (Fireball)
                         if (Keyboard.current.numpad1Key != null && Keyboard.current.numpad1Key.wasPressedThisFrame)
                         {
                             if (attack1CooldownTimer <= 0)
                             {
-                                if (hasAttack1) animator.SetTrigger("Attack1");
+                                if (hasAttack) animator.SetTrigger("Attack");
                                 if (hasIsAttacking) animator.SetBool("IsAttacking", true);
                                 if (hasIsActtack) animator.SetBool("IsActtack", true);
                                 StartCoroutine(ResetAttackBool(0.5f));
-                                StartCoroutine(SpawnFireball(0.2f)); // Delay để animation bắt đầu
-                                PerformMeleeAttack(1); // Attack 1: melee damage if in range
+                                StartCoroutine(SpawnFireball(0.2f)); // Delay for animation
+                                PerformMeleeAttack(1); // Attack: melee damage if in range
                                 attack1CooldownTimer = attack1Cooldown;
-                                StartCoroutine(LockMovementDuringAttack(0.5f)); // Khóa movement 0.5s
+                                StartCoroutine(LockMovementDuringAttack(0.5f));
+                                Debug.Log("Player2 Attack (Numpad 1) triggered + fireball");
                             }
                             else
                             {
-                                Debug.Log($"Player2 Attack1 on cooldown! {attack1CooldownTimer:F1}s remaining");
+                                Debug.Log($"Player2 Attack on cooldown! {attack1CooldownTimer:F1}s remaining");
                             }
                         }
-                        // Attack2 - Numpad 2
+                        // Numpad 2 = Skill1 (with Skill1 projectile)
                         if (Keyboard.current.numpad2Key != null && Keyboard.current.numpad2Key.wasPressedThisFrame)
+                        {
+                            if (attack1CooldownTimer <= 0)
+                            {
+                                if (hasSkill1) animator.SetTrigger("Skill1");
+                                PerformMeleeAttack(1); // Skill 1: deal damage
+                                attack1CooldownTimer = attack1Cooldown;
+                                StartCoroutine(LockMovementDuringAttack(0.5f));
+                                StartCoroutine(SpawnSkillProjectileDelayed(skill1ProjectilePrefab, skill1ProjectileSpeed, 0.45f)); // Spawn Skill1 projectile
+                                Debug.Log("Player2 Skill1 (Numpad 2) triggered + Skill1 projectile");
+                            }
+                            else
+                            {
+                                Debug.Log($"Player2 Skill1 on cooldown! {attack1CooldownTimer:F1}s remaining");
+                            }
+                        }
+                        // Numpad 3 = Skill2 (with Skill2 projectile)
+                        if (Keyboard.current.numpad3Key != null && Keyboard.current.numpad3Key.wasPressedThisFrame)
                         {
                             if (attack2CooldownTimer <= 0)
                             {
-                                Debug.Log($"Player2 Attack2! hasAttack2={hasAttack2} hasIsActtack={hasIsActtack}");
-                                if (hasAttack2) animator.SetTrigger("Attack2");
-                                if (hasIsAttacking) animator.SetBool("IsAttacking", true);
-                                if (hasIsActtack) animator.SetBool("IsActtack", true);
-                                StartCoroutine(ResetAttackBool(0.5f));
-                                PerformMeleeAttack(2); // Attack 2: deal damage
+                                if (hasSkill2) animator.SetTrigger("Skill2");
+                                PerformMeleeAttack(2); // Skill 2: deal damage
                                 attack2CooldownTimer = attack2Cooldown;
-                                StartCoroutine(LockMovementDuringAttack(0.6f)); // Khóa movement 0.6s
+                                StartCoroutine(LockMovementDuringAttack(0.6f));
+                                StartCoroutine(SpawnSkillProjectileDelayed(skill2ProjectilePrefab, skill2ProjectileSpeed, 0.45f)); // Spawn Skill2 projectile
+                                Debug.Log("Player2 Skill2 (Numpad 3) triggered + Skill2 projectile");
                             }
                             else
                             {
-                                Debug.Log($"Player2 Attack2 on cooldown! {attack2CooldownTimer:F1}s remaining");
+                                Debug.Log($"Player2 Skill2 on cooldown! {attack2CooldownTimer:F1}s remaining");
                             }
                         }
-                        // Attack3 (Jump + Fireball) - Numpad 3
-                        if (Keyboard.current.numpad3Key != null && Keyboard.current.numpad3Key.wasPressedThisFrame)
+                        // Numpad 4 = Skill3 (with Skill3 projectile)
+                        if (Keyboard.current.numpad4Key != null && Keyboard.current.numpad4Key.wasPressedThisFrame)
                         {
                             if (attack3CooldownTimer <= 0)
                             {
-                                if (hasAttack3) animator.SetTrigger("Attack3");
-                                if (hasIsAttacking) animator.SetBool("IsAttacking", true);
-                                if (hasIsActtack) animator.SetBool("IsActtack", true);
-                                StartCoroutine(ResetAttackBool(0.5f));
-                                StartCoroutine(SpawnFireball(0.3f)); // Delay cho animation nhảy
-                                PerformMeleeAttack(3); // Attack 3: melee damage if in range
+                                if (hasSkill3) animator.SetTrigger("Skill3");
+                                PerformMeleeAttack(3); // Skill 3: melee damage if in range
                                 attack3CooldownTimer = attack3Cooldown;
-                                StartCoroutine(LockMovementDuringAttack(0.8f)); // Khóa movement 0.8s
-
-                                // Apply leap for Attack3: forward + upward impulse
-                                // Player2: flipX true = facing right, flipX false = facing left (reversed from Player1)
-                                Vector2 leap = new Vector2((sprite != null && sprite.flipX) ? attack3ForwardImpulse : -attack3ForwardImpulse,
-                                                           attack3UpImpulse);
-                                rb.velocity = new Vector2(rb.velocity.x, 0f);
-                                rb.AddForce(leap, ForceMode2D.Impulse);
-                                controlLockUntil = Time.time + attack3ControlLock;
+                                StartCoroutine(LockMovementDuringAttack(0.8f));
+                                StartCoroutine(SpawnSkillProjectileDelayed(skill3ProjectilePrefab, skill3ProjectileSpeed, 0.5f)); // Spawn Skill3 projectile
+                                Debug.Log("Player2 Skill3 (Numpad 4) triggered + Skill3 projectile");
                             }
                             else
                             {
-                                Debug.Log($"Player2 Attack3 on cooldown! {attack3CooldownTimer:F1}s remaining");
+                                Debug.Log($"Player2 Skill3 on cooldown! {attack3CooldownTimer:F1}s remaining");
                             }
                         }
                     }
@@ -396,8 +483,14 @@ namespace InnerDuel.Characters
             float targetXVel = moveInput.x * moveSpeed;
             float control = isGrounded ? 1f : airControlMultiplier;
 
+            if (isKnockbacked)
+            {
+                // During knockback, don't override horizontal velocity with input
+                // Let physics settle; we only preserve current Y velocity
+                rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y);
+            }
             // Khóa movement khi đang tấn công
-            if (isAttacking)
+            else if (isAttacking)
             {
                 // Dừng di chuyển ngang khi đang attack (trừ Attack3 có leap)
                 if (Time.time >= controlLockUntil)
@@ -416,16 +509,27 @@ namespace InnerDuel.Characters
                 rb.velocity = new Vector2(Mathf.Lerp(rb.velocity.x, targetXVel, control), rb.velocity.y);
             }
 
-            // Jump
-            if (jumpQueued && isGrounded)
+            // Jump - Double jump system
+            if (jumpQueued)
             {
-                rb.velocity = new Vector2(rb.velocity.x, 0f);
-                rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-                Debug.Log($"Player{playerID} JUMPING! jumpForce={jumpForce}");
-            }
-            else if (jumpQueued && !isGrounded)
-            {
-                Debug.LogWarning($"Player{playerID} tried to jump but NOT GROUNDED! groundCheck={groundCheck?.name}, groundCheckRadius={groundCheckRadius}, groundLayer={groundLayer.value}");
+                // Reset jump count when grounded
+                if (isGrounded)
+                {
+                    jumpCount = 0;
+                }
+                
+                // Allow jump if we haven't used all jumps
+                if (jumpCount < maxJumps)
+                {
+                    rb.velocity = new Vector2(rb.velocity.x, 0f);
+                    rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+                    jumpCount++;
+                    Debug.Log($"Player{playerID} JUMPING! Jump {jumpCount}/{maxJumps}, jumpForce={jumpForce}");
+                }
+                else
+                {
+                    Debug.Log($"Player{playerID} tried to jump but already used all {maxJumps} jumps!");
+                }
             }
             jumpQueued = false;
 
@@ -437,17 +541,15 @@ namespace InnerDuel.Characters
         private void UpdateAnimatorBooleans()
         {
             if (animator == null) return;
-            bool running = Mathf.Abs(rb.velocity.x) > 0.05f && isGrounded;
             bool jumping = !isGrounded;
 
-            if (hasIsRunning) animator.SetBool("isRunning", running);
-            if (hasIsRunningPascal) animator.SetBool("IsRunning", running);
+            // Update Speed (Float) for running animation - used by both players
+            if (hasSpeed) animator.SetFloat("Speed", Mathf.Abs(rb.velocity.x));
+            
             if (hasIsJumping) animator.SetBool("isJumping", jumping);
             if (hasIsJumpingPascal) animator.SetBool("IsJumping", jumping);
             if (hasGrounded) animator.SetBool("Grounded", isGrounded);
             if (hasIsGrounded) animator.SetBool("IsGrounded", isGrounded);
-            if (hasSpeed) animator.SetFloat("Speed", Mathf.Abs(rb.velocity.x));
-            if (hasMoveSpeed) animator.SetFloat("MoveSpeed", rb.velocity.magnitude);
         }
 
         private void FlipByDirection(float x)
@@ -530,7 +632,12 @@ namespace InnerDuel.Characters
         {
             yield return new WaitForSeconds(delay);
             
-            if (fireballPrefab == null || playerID != 2) yield break;
+            SpawnSingleFireball();
+        }
+
+        private void SpawnSingleFireball()
+        {
+            if (fireballPrefab == null || playerID != 2) return;
 
             // Determine direction based on sprite flip
             // For Player2: flipX=false means facing left, flipX=true means facing right
@@ -563,6 +670,86 @@ namespace InnerDuel.Characters
             if (fbSprite != null && direction < 0f)
             {
                 fbSprite.flipX = true;
+            }
+        }
+
+        private IEnumerator SpawnFireballsBurst(float initialDelay, int count, float interval)
+        {
+            if (initialDelay > 0f) yield return new WaitForSeconds(initialDelay);
+            for (int i = 0; i < count; i++)
+            {
+                SpawnSingleFireball();
+                if (i < count - 1 && interval > 0f)
+                {
+                    yield return new WaitForSeconds(interval);
+                }
+            }
+        }
+
+        // ========== SKILL PROJECTILE SPAWNING ==========
+        
+        /// <summary>
+        /// Spawn a skill projectile with custom prefab and speed
+        /// </summary>
+        private void SpawnSkillProjectile(GameObject prefab, float speed)
+        {
+            if (prefab == null || playerID != 2) return;
+
+            // Determine direction based on sprite flip
+            float direction = (sprite != null && sprite.flipX) ? 1f : -1f;
+
+            // Determine spawn position
+            Vector3 spawnPos;
+            if (fireballSpawnPoint != null)
+            {
+                spawnPos = fireballSpawnPoint.position;
+            }
+            else
+            {
+                spawnPos = transform.position + new Vector3(direction * 0.5f, 0.5f, 0f);
+            }
+
+            // Spawn projectile
+            GameObject projectile = Instantiate(prefab, spawnPos, Quaternion.identity);
+
+            // Set velocity
+            Rigidbody2D rb2d = projectile.GetComponent<Rigidbody2D>();
+            if (rb2d != null)
+            {
+                rb2d.velocity = new Vector2(direction * speed, 0f);
+            }
+
+            // Flip sprite if shooting left
+            SpriteRenderer projSprite = projectile.GetComponent<SpriteRenderer>();
+            if (projSprite != null && direction < 0f)
+            {
+                projSprite.flipX = true;
+            }
+        }
+
+        /// <summary>
+        /// Spawn a skill projectile with delay (for animation timing)
+        /// </summary>
+        private IEnumerator SpawnSkillProjectileDelayed(GameObject prefab, float speed, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            SpawnSkillProjectile(prefab, speed);
+        }
+
+        /// <summary>
+        /// Spawn multiple skill projectiles in a burst
+        /// </summary>
+        private IEnumerator SpawnSkillProjectileBurst(GameObject prefab, float speed, float initialDelay, int count, float interval)
+        {
+            if (initialDelay > 0f) yield return new WaitForSeconds(initialDelay);
+            
+            for (int i = 0; i < count; i++)
+            {
+                SpawnSkillProjectile(prefab, speed);
+                if (i < count - 1 && interval > 0f)
+                {
+                    yield return new WaitForSeconds(interval);
+                }
             }
         }
 
@@ -612,11 +799,23 @@ namespace InnerDuel.Characters
 
             foreach (Collider2D enemy in hitEnemies)
             {
+                // Compute knockback direction (horizontal away from attacker)
+                Vector2 toEnemy = (Vector2)(enemy.transform.position - transform.position);
+                float dirX = Mathf.Sign(toEnemy.x == 0f ? (sprite != null && ((playerID==2)? !sprite.flipX : sprite.flipX) ? -1f : 1f) : toEnemy.x);
+                Vector2 kickImpulse = new Vector2(dirX * kickKnockbackForce, 0f);
+
                 // Try to damage via PlayerMovement2D
                 var enemyPlayer = enemy.GetComponent<PlayerMovement2D>();
                 if (enemyPlayer != null)
                 {
                     enemyPlayer.TakeDamage(attackDamage);
+
+                    // Apply knockback for Player2's Attack2 (kick)
+                    if (playerID == 2 && attackNumber == 2 && enableKickKnockback)
+                    {
+                        enemyPlayer.ApplyKnockback(kickImpulse, kickKnockbackDuration);
+                    }
+                    
                     Debug.Log($"Player{playerID} Attack{attackNumber} dealt {attackDamage} damage to {enemy.name}");
                 }
                 
@@ -625,6 +824,18 @@ namespace InnerDuel.Characters
                 if (enemyController != null)
                 {
                     enemyController.TakeDamage(attackDamage);
+
+                    // Apply knockback to enemies using InnerCharacterController via Rigidbody2D (no code changes there)
+                    if (playerID == 2 && attackNumber == 2 && enableKickKnockback)
+                    {
+                        var enemyRb = enemyController.GetComponent<Rigidbody2D>();
+                        if (enemyRb != null)
+                        {
+                            enemyRb.velocity = new Vector2(0f, enemyRb.velocity.y); // reset X for consistent push
+                            enemyRb.AddForce(kickImpulse, ForceMode2D.Impulse);
+                        }
+                    }
+                    
                     Debug.Log($"Player{playerID} Attack{attackNumber} dealt {attackDamage} damage to {enemy.name}");
                 }
             }
@@ -664,10 +875,18 @@ namespace InnerDuel.Characters
                 return;
             }
 
-            currentHealth -= damage;
+            // Apply defence reduction if defending
+            float actualDamage = damage;
+            if (isDefending)
+            {
+                actualDamage = damage * defenceReduction; // 20% damage when defending
+                Debug.Log($"Player{playerID} is DEFENDING! Reduced damage from {damage} to {actualDamage}");
+            }
+            
+            currentHealth -= actualDamage;
             invincibilityTimer = invincibilityDuration;
 
-            Debug.Log($"Player{playerID} took {damage} damage! Current HP: {currentHealth}/{maxHealth}");
+            Debug.Log($"Player{playerID} took {actualDamage} damage! Current HP: {currentHealth}/{maxHealth}");
 
             // Update health bar
             if (healthBar != null)
@@ -729,6 +948,34 @@ namespace InnerDuel.Characters
             sprite.color = original;
         }
 
+        public void ApplyKnockback(Vector2 impulse, float duration)
+        {
+            if (rb == null) return;
+            StopCoroutineSafe(knockbackRoutine);
+            knockbackRoutine = StartCoroutine(KnockbackRoutine(impulse, duration));
+        }
+
+        private Coroutine knockbackRoutine;
+        private IEnumerator KnockbackRoutine(Vector2 impulse, float duration)
+        {
+            isKnockbacked = true;
+            // reset horizontal velocity before applying impulse for consistency
+            rb.velocity = new Vector2(0f, rb.velocity.y);
+            rb.AddForce(impulse, ForceMode2D.Impulse);
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                yield return null;
+            }
+            isKnockbacked = false;
+        }
+
+        private void StopCoroutineSafe(Coroutine c)
+        {
+            if (c != null) StopCoroutine(c);
+        }
+
         /// <summary>
         /// Check if player is dead
         /// </summary>
@@ -745,6 +992,7 @@ namespace InnerDuel.Characters
             if (isDead) return; // Already dead, don't trigger again
             
             isDead = true;
+            isKnockbacked = false; // clear state on death
             Debug.Log($"Player{playerID} died!");
 
             // Disable movement immediately
@@ -767,11 +1015,12 @@ namespace InnerDuel.Characters
             {
                 Debug.Log($"Player{playerID} PlayDeathAnimation started. Current state: {animator.GetCurrentAnimatorStateInfo(0).fullPathHash}");
                 
-                // Set isDead parameter to trigger death animation
+                // Set isDead/IsDeath parameter to trigger death animation
                 if (hasIsDead)
                 {
-                    animator.SetBool("isDead", true);
-                    Debug.Log($"Player{playerID} set isDead=true for death animation");
+                    // Try IsDeath first (what's in the controller), then isDead
+                    animator.SetBool("IsDeath", true);
+                    Debug.Log($"Player{playerID} set IsDeath=true for death animation");
                 }
                 
                 // Try die trigger (only if isDead bool is not available)

@@ -13,6 +13,33 @@ namespace InnerDuel.Characters
         public GameObject surrenderPrefab;
         public GameObject stillnessPrefab;
         public GameObject ragePrefab;
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            AutoAssignPrefabs();
+        }
+
+        private void AutoAssignPrefabs()
+        {
+            // Use Player1/Player2 prefabs for Discipline/Spontaneity (Thuong/PhapSu)
+            if (disciplinePrefab == null) disciplinePrefab = FindPrefab("Player1") ?? FindPrefab("Discipline_Character");
+            if (spontaneityPrefab == null) spontaneityPrefab = FindPrefab("Player2") ?? FindPrefab("Spontaneity_Character");
+            if (logicPrefab == null) logicPrefab = FindPrefab("Logic_Character") ?? FindPrefab("Player1");
+            if (creativityPrefab == null) creativityPrefab = FindPrefab("Creativity_Character") ?? FindPrefab("Player2");
+        }
+
+        private GameObject FindPrefab(string name)
+        {
+            string[] guids = UnityEditor.AssetDatabase.FindAssets(name + " t:Prefab");
+            if (guids.Length > 0)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            }
+            return null;
+        }
+#endif
         
         [Header("Character Data")]
         public CharacterData[] characterDataArray;
@@ -42,10 +69,54 @@ namespace InnerDuel.Characters
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
+                
+                // Try to auto-assign prefabs at runtime if not assigned
+                TryAutoAssignPrefabsRuntime();
             }
             else if (instance != this)
             {
                 Destroy(gameObject);
+            }
+        }
+        
+        private void TryAutoAssignPrefabsRuntime()
+        {
+            // Try to find Player1/Player2 prefabs in Resources folder at runtime
+            if (disciplinePrefab == null)
+            {
+                disciplinePrefab = Resources.Load<GameObject>("Player1");
+                if (disciplinePrefab == null)
+                {
+                    // Fallback: try to find in scene or prefabs folder
+                    GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+                    foreach (GameObject obj in allObjects)
+                    {
+                        if (obj.name == "Player1" && obj.GetComponent<PlayerMovement2D>() != null)
+                        {
+                            disciplinePrefab = obj;
+                            Debug.Log("[CharacterFactory] Found Player1 prefab at runtime");
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (spontaneityPrefab == null)
+            {
+                spontaneityPrefab = Resources.Load<GameObject>("Player2");
+                if (spontaneityPrefab == null)
+                {
+                    GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+                    foreach (GameObject obj in allObjects)
+                    {
+                        if (obj.name == "Player2" && obj.GetComponent<PlayerMovement2D>() != null)
+                        {
+                            spontaneityPrefab = obj;
+                            Debug.Log("[CharacterFactory] Found Player2 prefab at runtime");
+                            break;
+                        }
+                    }
+                }
             }
         }
         
@@ -71,7 +142,7 @@ namespace InnerDuel.Characters
             
             Debug.Log($"[CharacterFactory] Successfully instantiated {characterObj.name} at {position}.");
             
-            // Setup character controller
+            // Setup character controller - support both InnerCharacterController and PlayerMovement2D
             InnerDuel.Characters.InnerCharacterController controller = characterObj.GetComponent<InnerDuel.Characters.InnerCharacterController>();
             if (controller != null)
             {
@@ -86,6 +157,27 @@ namespace InnerDuel.Characters
                 
                 // Set layer based on player ID
                 characterObj.layer = playerID == 1 ? LayerMask.NameToLayer("Player1") : LayerMask.NameToLayer("Player2");
+            }
+            else
+            {
+                // Check for PlayerMovement2D (new character system)
+                InnerDuel.Characters.PlayerMovement2D playerMovement = characterObj.GetComponent<InnerDuel.Characters.PlayerMovement2D>();
+                if (playerMovement != null)
+                {
+                    playerMovement.playerID = playerID;
+                    
+                    // Add Unique Abilities based on CharacterType
+                    AddUniqueAbilities(characterObj, type);
+                    
+                    // Set layer based on player ID
+                    characterObj.layer = playerID == 1 ? LayerMask.NameToLayer("Player1") : LayerMask.NameToLayer("Player2");
+                    
+                    Debug.Log($"[CharacterFactory] Using PlayerMovement2D for {characterObj.name}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[CharacterFactory] {characterObj.name} has neither InnerCharacterController nor PlayerMovement2D component!");
+                }
             }
             
             return characterObj;
@@ -162,8 +254,7 @@ namespace InnerDuel.Characters
         
         private CharacterData CreateDefaultCharacterData(CharacterType type)
         {
-            Debug.LogWarning($"[InnerDuel] CharacterData SO for {type} is missing! Using runtime default stats. Please create the SO asset in the Editor for persistence.");
-            
+            // Silently create default data - no warning needed
             CharacterData data = ScriptableObject.CreateInstance<CharacterData>();
             data.type = type;
             

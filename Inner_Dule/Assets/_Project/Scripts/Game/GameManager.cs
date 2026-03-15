@@ -83,44 +83,32 @@ namespace InnerDuel
                 Debug.LogWarning($"[InnerDuel] Pre-existing players found in scene before spawning: P1: {player1 != null}, P2: {player2 != null}. These will be replaced by newly spawned characters.");
             }
 
-            // Luôn ưu tiên spawn nhân vật mới từ Factory dựa trên SelectionData
+            // Spawn Player 1
             Debug.Log($"[InnerDuel] Spawning P1: {p1Type}");
             GameObject p1Obj = CharacterFactory.Instance.CreateCharacter(p1Type, new Vector3(-5f, 0f, 0f), 1);
             if (p1Obj != null) 
             {
                 player1 = p1Obj.GetComponent<InnerCharacterController>();
+                playerMovement1 = p1Obj.GetComponent<PlayerMovement2D>();
+                Debug.Log($"[InnerDuel] P1 spawned successfully. InnerController: {player1 != null}, PlayerMovement: {playerMovement1 != null}");
             }
             else 
             {
                 Debug.LogError("[InnerDuel] Failed to spawn P1 via Factory!");
             }
 
-            // Declare player objects upfront
-            GameObject p1Obj = null;
-            GameObject p2Obj = null;
-            
-            // Still missing? Spawn defaults from Factory
-            if (player1 == null)
+            // Spawn Player 2
+            Debug.Log($"[InnerDuel] Spawning P2: {p2Type}");
+            p2Obj = CharacterFactory.Instance.CreateCharacter(p2Type, new Vector3(5f, 0f, 0f), 2);
+            if (p2Obj != null)
             {
-                Debug.Log("[InnerDuel] Auto-spawning P1: Logic");
-                p1Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Logic, new Vector3(-5f, 0f, 0f), 1);
-                if (p1Obj != null)
-                {
-                    player1 = p1Obj.GetComponent<InnerCharacterController>();
-                    playerMovement1 = p1Obj.GetComponent<PlayerMovement2D>();
-                }
+                player2 = p2Obj.GetComponent<InnerCharacterController>();
+                playerMovement2 = p2Obj.GetComponent<PlayerMovement2D>();
+                Debug.Log($"[InnerDuel] P2 spawned successfully. InnerController: {player2 != null}, PlayerMovement: {playerMovement2 != null}");
             }
-
-            // Fallback: Nếu spawn thất bại hoàn toàn mới thử Recover
-            if (player1 == null || player2 == null)
+            else
             {
-                Debug.Log("[InnerDuel] Auto-spawning P2: Creativity");
-                p2Obj = CharacterFactory.Instance.CreateCharacter(CharacterType.Creativity, new Vector3(5f, 0f, 0f), 2);
-                if (p2Obj != null)
-                {
-                    player2 = p2Obj.GetComponent<InnerCharacterController>();
-                    playerMovement2 = p2Obj.GetComponent<PlayerMovement2D>();
-                }
+                Debug.LogError("[InnerDuel] Failed to spawn P2 via Factory!");
             }
 
             // Setup character layers and basic settings
@@ -225,14 +213,12 @@ namespace InnerDuel
                 }
             }
             
-            // Check for references
-            if (player1 == null || player2 == null)
+            // Check for references - only warn if BOTH types are missing
+            if (player1 == null && player2 == null && playerMovement1 == null && playerMovement2 == null)
             {
-                if (!RecoverPlayers())
-                {
-                    Debug.LogWarning("[InnerDuel] Players not found in Gameplay state. No players discovered in scene.");
-                    // Don't return - maybe using PlayerMovement2D instead
-                }
+                // Try to recover players silently
+                RecoverPlayers();
+                // No warning - players might be using PlayerMovement2D
             }
 
             // Check for win conditions (support both types)
@@ -359,10 +345,40 @@ namespace InnerDuel
             if (player1 != null) player1.enabled = false;
             if (player2 != null) player2.enabled = false;
             
-            // Start ending sequence
+            // Start ending sequence safely, even if winner is null or uses PlayerMovement2D
             if (cameraController != null)
             {
-                cameraController.StartEndingSequence(winner.transform);
+                Transform focus = null;
+                
+                // Prefer the explicit winner if available
+                if (winner != null)
+                {
+                    focus = winner.transform;
+                }
+                else
+                {
+                    // Try to determine the surviving character
+                    if (player1 != null && !player1.IsDead()) focus = player1.transform;
+                    else if (player2 != null && !player2.IsDead()) focus = player2.transform;
+
+                    // Fallback to PlayerMovement2D references if InnerCharacterController is not used
+                    if (focus == null)
+                    {
+                        if (playerMovement1 != null && !playerMovement1.IsDead()) focus = playerMovement1.transform;
+                        else if (playerMovement2 != null && !playerMovement2.IsDead()) focus = playerMovement2.transform;
+                    }
+
+                    // Last resort: use any available transform (even if dead), to avoid null
+                    if (focus == null)
+                    {
+                        if (player1 != null) focus = player1.transform;
+                        else if (player2 != null) focus = player2.transform;
+                        else if (playerMovement1 != null) focus = playerMovement1.transform;
+                        else if (playerMovement2 != null) focus = playerMovement2.transform;
+                    }
+                }
+
+                cameraController.StartEndingSequence(focus);
             }
         }
         
