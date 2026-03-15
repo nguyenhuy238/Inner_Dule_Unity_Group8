@@ -317,8 +317,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f871719ecf9d62a45a44c7ff5e4806b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  disciplinePrefab: {fileID: 0}
-  spontaneityPrefab: {fileID: 0}
+  disciplinePrefab: {fileID: 6294263454781811599, guid: 1a2174954822eb14e90b9fd97c22c3e8, type: 3}
+  spontaneityPrefab: {fileID: 6294263454781811599, guid: 1a2174954822eb14e90b9fd97c22c3e8, type: 3}
   logicPrefab: {fileID: 8824787756666514057, guid: d76ced4c1a60a704599ad4c2ae27954f, type: 3}
   creativityPrefab: {fileID: 1643348588376171929, guid: 27c459d1ee7b65644ae31205a675845e, type: 3}
   persistencePrefab: {fileID: 0}
