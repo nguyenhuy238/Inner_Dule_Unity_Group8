@@ -18,7 +18,7 @@ namespace InnerDuel.UI
 
         public void PlayGame()
         {
-            SceneManager.LoadScene(GameData.CharacterSelectScene);
+            SceneManager.LoadScene(GameData.MapSelectScene);
         }
 
         public void ShowMainMenu()

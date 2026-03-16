@@ -19,7 +19,7 @@ TagManager:
   - 
   - Player1
   - Player2
-  - 
+  - PauseMenu
   - 
   - 
   - 
@@ -44,4 +44,7 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Layer2
+    uniqueID: 1442216451
     locked: 0

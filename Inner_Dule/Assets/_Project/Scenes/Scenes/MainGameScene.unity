@@ -333,7 +333,7 @@ GameObject:
   - component: {fileID: 229460673}
   - component: {fileID: 229460675}
   - component: {fileID: 229460674}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: PauseTitle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -504,7 +504,7 @@ GameObject:
   - component: {fileID: 402427434}
   - component: {fileID: 402427433}
   - component: {fileID: 402427432}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: ResumeButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -832,7 +832,7 @@ GameObject:
   - component: {fileID: 497716905}
   - component: {fileID: 497716907}
   - component: {fileID: 497716906}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: PauseMenuPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1274,6 +1274,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &629541099
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 629541100}
+  m_Layer: 0
+  m_Name: MapRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &629541100
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 629541099}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.17349209, y: 0.14152843, z: 739.9301}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &679672763
 GameObject:
   m_ObjectHideFlags: 0
@@ -1285,7 +1316,7 @@ GameObject:
   - component: {fileID: 679672764}
   - component: {fileID: 679672766}
   - component: {fileID: 679672765}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1420,7 +1451,7 @@ GameObject:
   - component: {fileID: 681012317}
   - component: {fileID: 681012316}
   - component: {fileID: 681012315}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: RestartButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1552,7 +1583,7 @@ GameObject:
   - component: {fileID: 688601123}
   - component: {fileID: 688601125}
   - component: {fileID: 688601124}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1945,7 +1976,7 @@ GameObject:
   - component: {fileID: 1119537671}
   - component: {fileID: 1119537673}
   - component: {fileID: 1119537672}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2115,6 +2146,8 @@ MonoBehaviour:
   currentState: 0
   player1: {fileID: 0}
   player2: {fileID: 0}
+  mapParent: {fileID: 629541100}
+  fallbackMap: {fileID: 11400000, guid: 5b0417e85b7612d47a7257f729c0c518, type: 2}
   uiManager: {fileID: 2013290071}
   cameraController: {fileID: 519420033}
   introDuration: 3
@@ -2475,7 +2508,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1361954135}
   - component: {fileID: 1361954136}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: Buttons
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3247,7 +3280,7 @@ GameObject:
   - component: {fileID: 2073918068}
   - component: {fileID: 2073918067}
   - component: {fileID: 2073918066}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: QuitButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3418,3 +3451,4 @@ SceneRoots:
   - {fileID: 1466938246}
   - {fileID: 1273895381}
   - {fileID: 32863471}
+  - {fileID: 629541100}

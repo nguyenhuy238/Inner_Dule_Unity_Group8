@@ -13,12 +13,16 @@ namespace InnerDuel.Core
         public static CharacterData player1Character;
         public static CharacterData player2Character;
 
+        // Selected map
+        public static MapData selectedMap;
+
         // Match results
         public static int winnerPlayerID = 0; // 1 for P1, 2 for P2
         public static string winnerName = "";
 
         // Scene names (to avoid magic strings)
         public const string MainMenuScene = "MainMenuScene";
+        public const string MapSelectScene = "MapSelectScene";
         public const string CharacterSelectScene = "CharacterSelectScene";
         public const string LoadingScene = "LoadingScene";
         public const string MainGameScene = "MainGameScene";
@@ -28,6 +32,7 @@ namespace InnerDuel.Core
         {
             player1Character = null;
             player2Character = null;
+            selectedMap = null;
             winnerPlayerID = 0;
             winnerName = "";
         }

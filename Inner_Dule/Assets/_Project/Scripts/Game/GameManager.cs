@@ -15,6 +15,10 @@ namespace InnerDuel
         [Header("Characters")]
         public InnerCharacterController player1;
         public InnerCharacterController player2;
+
+        [Header("Map")]
+        public Transform mapParent;
+        public MapData fallbackMap;
         
         // Death Handling
         private bool deathSequenceStarted = false;
@@ -71,6 +75,10 @@ namespace InnerDuel
         {
             Debug.Log("[InnerDuel] InitializeGame started.");
 
+            // 1. Spawn Map
+            SpawnMap();
+
+            // 2. Setup Players
             // Prefer using players already placed in the scene
             if (player1 == null || player2 == null)
             {
@@ -120,6 +128,22 @@ namespace InnerDuel
             }
 
             StartIntro();
+        }
+
+        private void SpawnMap()
+        {
+            MapData mapToSpawn = GameData.selectedMap != null ? GameData.selectedMap : fallbackMap;
+
+            if (mapToSpawn != null && mapToSpawn.mapPrefab != null)
+            {
+                Debug.Log($"[InnerDuel] Spawning map: {mapToSpawn.mapName}");
+                GameObject mapInstance = Instantiate(mapToSpawn.mapPrefab, Vector3.zero, Quaternion.identity);
+                if (mapParent != null) mapInstance.transform.SetParent(mapParent);
+            }
+            else
+            {
+                Debug.LogWarning("[InnerDuel] No map selected and no fallback map assigned!");
+            }
         }
         
         private void HandleIntroState()
