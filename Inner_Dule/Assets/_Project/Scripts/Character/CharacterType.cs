@@ -27,6 +27,11 @@ namespace InnerDuel.Characters
     [CreateAssetMenu(fileName = "NewCharacterData", menuName = "InnerDuel/Character/CharacterData")]
     public class CharacterData : ScriptableObject
     {
+        [Header("Visual Assets")]
+        public RuntimeAnimatorController animatorController;
+        public GameObject characterPrefab; // If null, uses default scene object
+        public Sprite defaultSprite;
+        
         [Header("Identity")]
         public CharacterType type;
         public string characterName;

@@ -196,8 +196,21 @@ namespace InnerDuel.Characters
         public void InitializeFromData()
         {
             if (characterData == null) return;
+            
+            // Stats
             currentHealth = characterData.maxHealth;
             if (healthBar != null) healthBar.SetMaxHealth(currentHealth);
+            
+            // Visuals
+            if (characterData.defaultSprite != null && spriteRenderer != null)
+            {
+                spriteRenderer.sprite = characterData.defaultSprite;
+            }
+            
+            if (characterData.animatorController != null && animator != null)
+            {
+                animator.runtimeAnimatorController = characterData.animatorController;
+            }
         }
 
         private void Update()
@@ -492,8 +505,7 @@ namespace InnerDuel.Characters
             // Special Logic: Projectile (Player 2 / Ranged)
             // Check if we should spawn projectile. 
             // Simple logic: If prefab exists and it's Attack 1 or 3 (classic shoto/zoning).
-            // Or just check playerID for now to match legacy.
-            bool isProjectile = (characterData != null && characterData.projectilePrefab != null && (attackIndex == 1 || attackIndex == 3) && playerID == 2);
+            bool isProjectile = (characterData != null && characterData.projectilePrefab != null && (attackIndex == 1 || attackIndex == 3));
             
             if (isProjectile)
             {
@@ -615,6 +627,9 @@ namespace InnerDuel.Characters
             // Notify abilities first (for parry/counter logic)
             foreach (var ability in abilities) ability.OnTakeDamage(damage);
 
+            // Re-check invincibility (Abilities might have triggered a counter/parry that grants i-frames)
+            if (invincibilityTimer > 0) return;
+
             // Re-check if still alive/valid after ability logic
             if (isDead) return;
 
@@ -641,6 +656,9 @@ namespace InnerDuel.Characters
 
         public void TriggerCounterAttack()
         {
+            // Grant I-Frames to negate the incoming damage that triggered this
+            invincibilityTimer = 0.5f;
+
             // Reset block
             StopBlocking();
             

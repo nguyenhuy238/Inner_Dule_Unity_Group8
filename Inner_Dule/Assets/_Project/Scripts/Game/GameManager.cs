@@ -79,10 +79,37 @@ namespace InnerDuel
             SpawnMap();
 
             // 2. Setup Players
-            // Prefer using players already placed in the scene
+            // Prefer using players already placed in the scene as placeholders/spawn points
             if (player1 == null || player2 == null)
             {
                 RecoverPlayers();
+            }
+
+            // Spawn Actual Characters from Prefabs if defined in Data
+            if (GameData.player1Character != null && GameData.player1Character.characterPrefab != null && player1 != null)
+            {
+                Vector3 spawnPos = player1.transform.position;
+                Quaternion spawnRot = player1.transform.rotation;
+                GameObject oldP1 = player1.gameObject;
+                
+                GameObject newP1Obj = Instantiate(GameData.player1Character.characterPrefab, spawnPos, spawnRot);
+                player1 = newP1Obj.GetComponent<InnerCharacterController>();
+                
+                // Cleanup old placeholder
+                Destroy(oldP1);
+            }
+            
+            if (GameData.player2Character != null && GameData.player2Character.characterPrefab != null && player2 != null)
+            {
+                Vector3 spawnPos = player2.transform.position;
+                Quaternion spawnRot = player2.transform.rotation;
+                GameObject oldP2 = player2.gameObject;
+                
+                GameObject newP2Obj = Instantiate(GameData.player2Character.characterPrefab, spawnPos, spawnRot);
+                player2 = newP2Obj.GetComponent<InnerCharacterController>();
+                
+                // Cleanup old placeholder
+                Destroy(oldP2);
             }
 
             // Apply Character Data from Character Select if available
