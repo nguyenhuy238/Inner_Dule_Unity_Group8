@@ -14,15 +14,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 0
   characterName: Ky_Luat
-  description: 
+  description: Hello
   maxHealth: 150
   moveSpeed: 3
   defense: 15
+  jumpForce: 12
+  airControlMultiplier: 0.8
   attackDamage: 20
   attackRange: 1.3
   attackCooldown: 0.8
   dashSpeedMultiplier: 3
   dashDuration: 0.2
+  attack1Damage: 10
+  attack1Range: 1.2
+  attack1Cooldown: 0.5
+  attack2Damage: 15
+  attack2Range: 1.5
+  attack2Cooldown: 1
+  attack3Damage: 20
+  attack3Range: 1.8
+  attack3Cooldown: 1.5
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 10
+  attack3LeapForce: {x: 5, y: 5}
+  attack3ControlLock: 0.2
   mainColor: {r: 1, g: 1, b: 1, a: 1}
   effectColor: {r: 1, g: 0, b: 0, a: 1}
   canBlock: 1
