@@ -14,15 +14,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 1
   characterName: Ngau_Hung
+  portrait: {fileID: 21300000, guid: e5a79bb039754a04882ecafb899436d2, type: 3}
   description: 
   maxHealth: 80
   moveSpeed: 7.5
   defense: 2
+  jumpForce: 12
+  airControlMultiplier: 0.8
   attackDamage: 12
   attackRange: 1.1
   attackCooldown: 0.35
   dashSpeedMultiplier: 4
   dashDuration: 0.25
+  attack1Damage: 10
+  attack1Range: 1.2
+  attack1Cooldown: 0.5
+  attack2Damage: 15
+  attack2Range: 1.5
+  attack2Cooldown: 1
+  attack3Damage: 20
+  attack3Range: 1.8
+  attack3Cooldown: 1.5
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 10
+  attack3LeapForce: {x: 5, y: 5}
+  attack3ControlLock: 0.2
   mainColor: {r: 1, g: 1, b: 1, a: 1}
   effectColor: {r: 1, g: 0, b: 0, a: 1}
   canBlock: 0

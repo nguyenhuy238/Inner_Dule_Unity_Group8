@@ -102,10 +102,16 @@ namespace InnerDuel.UI
         {
             if (availableCharacters == null || availableCharacters.Count == 0) return;
 
-            if (p1SelectionName) p1SelectionName.text = availableCharacters[p1Index].characterName;
+            // Update P1 UI
+            CharacterData p1Data = availableCharacters[p1Index];
+            if (p1SelectionName) p1SelectionName.text = p1Data.characterName;
+            if (p1Portrait) p1Portrait.sprite = p1Data.portrait;
             if (p1Status) p1Status.text = p1Confirmed ? "READY" : "SELECTING...";
 
-            if (p2SelectionName) p2SelectionName.text = availableCharacters[p2Index].characterName;
+            // Update P2 UI
+            CharacterData p2Data = availableCharacters[p2Index];
+            if (p2SelectionName) p2SelectionName.text = p2Data.characterName;
+            if (p2Portrait) p2Portrait.sprite = p2Data.portrait;
             if (p2Status) p2Status.text = p2Confirmed ? "READY" : "SELECTING...";
         }
 

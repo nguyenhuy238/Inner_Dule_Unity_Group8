@@ -30,6 +30,7 @@ namespace InnerDuel.Characters
         [Header("Identity")]
         public CharacterType type;
         public string characterName;
+        public Sprite portrait;
         [TextArea(3, 10)]
         public string description;
         

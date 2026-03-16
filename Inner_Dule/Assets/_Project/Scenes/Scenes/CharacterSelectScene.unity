@@ -1728,7 +1728,6 @@ MonoBehaviour:
   availableCharacters:
   - {fileID: 11400000, guid: 569c5d0f809630540ad0e58cf94bd243, type: 2}
   - {fileID: 11400000, guid: bd1630b32c6b3a0429ed48b9928407e1, type: 2}
-  - {fileID: 11400000, guid: 6cbcc3d8bb726a44583c1d6bfd497445, type: 2}
   p1SelectionName: {fileID: 1237626096}
   p1Portrait: {fileID: 2139507931}
   p1Status: {fileID: 320442144}
