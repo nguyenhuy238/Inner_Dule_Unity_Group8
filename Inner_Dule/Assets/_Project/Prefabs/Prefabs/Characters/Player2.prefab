@@ -201,11 +201,11 @@ MonoBehaviour:
   attack3ForwardImpulse: 6
   attack3UpImpulse: 8
   attack3ControlLock: 0.2
-  groundCheck: {fileID: 7099487854706512339, guid: 9d482dc686816ab4db5194112df25041, type: 3}
+  groundCheck: {fileID: 0}
   groundCheckRadius: 0.15
   groundLayer:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 8
   fireballPrefab: {fileID: 6294263454781811599, guid: 07847cad0918afc49b9277b4602c548d, type: 3}
   fireballSpawnPoint: {fileID: 5024443750223056287}
   fireballSpeed: 15

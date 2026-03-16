@@ -22,10 +22,10 @@ namespace InnerDuel.Characters
         [Tooltip("Vertical impulse applied when performing Attack3 (leap upward)")] public float attack3UpImpulse = 8f;
         [Tooltip("Duration to lock horizontal control so the leap isn't damped (seconds)")] public float attack3ControlLock = 0.2f;
 
-        [Header("Ground Check")]
+        [HideInInspector]
         public Transform groundCheck;
-        public float groundCheckRadius = 0.15f;
-        [Tooltip("Optional. If left empty, we will detect by tag 'Ground'.")] public LayerMask groundLayer;
+        [HideInInspector] public float groundCheckRadius = 0.15f;
+        [HideInInspector] public LayerMask groundLayer;
 
         [Header("Projectile (Player 2 Only)")]
         [Tooltip("Fireball prefab for Player 2's Attack1")]
@@ -70,6 +70,7 @@ namespace InnerDuel.Characters
         private Rigidbody2D rb;
         private Animator animator;
         private SpriteRenderer sprite;
+        private Collider2D col;
 
         // State
         private Vector2 moveInput;
@@ -134,14 +135,8 @@ namespace InnerDuel.Characters
             animator = GetComponent<Animator>();
             sprite = GetComponent<SpriteRenderer>();
 
-            // Auto-create a ground check if none assigned
-            if (groundCheck == null)
-            {
-                var go = new GameObject("GroundCheck");
-                go.transform.SetParent(transform);
-                go.transform.localPosition = new Vector3(0f, -0.5f, 0f);
-                groundCheck = go.transform;
-            }
+            // GroundCheck transform is no longer required. We detect grounding using collider bounds.
+            col = GetComponent<Collider2D>();
 
             // Auto-create attack points if none assigned
             // Attack points will be updated dynamically based on flip direction
@@ -465,28 +460,49 @@ namespace InnerDuel.Characters
 
         private void FixedUpdate()
         {
-            // Robust ground detection: ignore own colliders and triggers
+            // Ground detection using collider bounds (no external transform needed)
             bool grounded = false;
-            Collider2D[] hits;
-            if (groundLayer.value != 0)
+            Vector2 checkPos;
+            float extraDepth = 0.06f;
+            if (col != null)
             {
-                hits = Physics2D.OverlapCircleAll(groundCheck.position, groundCheckRadius, groundLayer);
+                checkPos = new Vector2(col.bounds.center.x, col.bounds.min.y - extraDepth);
             }
             else
             {
-                hits = Physics2D.OverlapCircleAll(groundCheck.position, groundCheckRadius);
+                checkPos = (Vector2)transform.position + new Vector2(0f, -0.5f);
             }
+
+            // 1) Overlap circle
+            Collider2D[] hits;
+            hits = Physics2D.OverlapCircleAll(checkPos, groundCheckRadius);
             for (int i = 0; i < hits.Length; i++)
             {
                 var h = hits[i];
                 if (h == null) continue;
-                if (h.attachedRigidbody == rb) continue; // skip self
-                if (h.isTrigger) continue; // ignore triggers
-                if (groundLayer.value == 0 && !h.CompareTag("Ground")) continue; // tag filter when no layer mask
+                if (h.attachedRigidbody == rb) continue;
+                if (h.isTrigger) continue;
+                if (!h.CompareTag("Ground")) continue;
                 grounded = true;
                 break;
             }
+
+            // 2) Short raycast downward as fallback
+            if (!grounded)
+            {
+                float rayLen = Mathf.Max(groundCheckRadius, 0.2f);
+                RaycastHit2D hit = Physics2D.Raycast(checkPos, Vector2.down, rayLen);
+                if (hit.collider != null)
+                {
+                    if ((hit.rigidbody == null || hit.rigidbody != rb) && !hit.collider.isTrigger && hit.collider.CompareTag("Ground"))
+                    {
+                        grounded = true;
+                    }
+                }
+            }
+
             isGrounded = grounded;
+
 
             // Horizontal movement
             float targetXVel = moveInput.x * moveSpeed;
@@ -546,14 +562,23 @@ namespace InnerDuel.Characters
             // Animator + facing after physics & ground were resolved
             UpdateAnimatorBooleans();
             FlipByDirection(rb.velocity.x);
+
+            // Update running SFX based on movement state
+            UpdateRunAudio();
+        }
+
+        private void UpdateRunAudio()
+        {
+            // Simple global run loop: play while grounded and moving, stop otherwise
+            bool shouldRun = isGrounded && Mathf.Abs(rb.velocity.x) > 0.1f && !isAttacking && !isKnockbacked;
+            AudioManager.Instance?.UpdateRunState(playerID, shouldRun);
         }
 
         private void UpdateAnimatorBooleans()
         {
             if (animator == null) return;
             
-            // Better jump detection: use velocity.y to detect if player is in air
-            // This catches the jump immediately when force is applied
+            // Jump state follows grounded only (velocity used just for snappier feel)
             bool jumping = !isGrounded || rb.velocity.y > 0.1f;
 
             // Update Speed (Float) for running animation - used by both players

@@ -9,7 +9,8 @@ namespace InnerDuel.Audio
         
         [Header("Audio Sources")]
         public AudioSource musicSource;
-        public AudioSource sfxSource;
+        public AudioSource sfxSource;   // one-shots (jump/attack/skills/explosions)
+        public AudioSource runSource;   // dedicated loop for running
         public AudioSource voiceSource;
         
         [Header("Audio Clips")]
@@ -52,6 +53,10 @@ namespace InnerDuel.Audio
         
         private float currentHealthRatio = 1f;
         private int currentBGMIndex = 0;
+
+        // Track run state per player (since we have exactly 2 players)
+        private bool p1Running = false;
+        private bool p2Running = false;
         
         protected override void Awake()
         {
@@ -77,6 +82,12 @@ namespace InnerDuel.Audio
                 sfxSource = gameObject.AddComponent<AudioSource>();
                 sfxSource.loop = false;
             }
+
+            if (runSource == null)
+            {
+                runSource = gameObject.AddComponent<AudioSource>();
+                runSource.loop = true; // loop run sound separately
+            }
             
             if (voiceSource == null)
             {
@@ -84,10 +95,18 @@ namespace InnerDuel.Audio
                 voiceSource.loop = false;
             }
             
+            // Ensure 2D playback
+            musicSource.spatialBlend = 0f;
+            sfxSource.spatialBlend = 0f;
+            runSource.spatialBlend = 0f;
+            voiceSource.spatialBlend = 0f;
+            
             // Set initial volumes
             SetMusicVolume(musicBaseVolume);
             SetSFXVolume(sfxBaseVolume);
             SetVoiceVolume(voiceBaseVolume);
+            
+            Debug.Log($"[AudioManager:{name}] Initialized. Clips - jump:{(jumpSound?jumpSound.name:"NULL")}, run:{(runSound?runSound.name:"NULL")}");
             
             // Start playing background music
             PlayBGM(0);
@@ -161,33 +180,46 @@ namespace InnerDuel.Audio
             }
         }
         
-        public void PlayRunSound()
+        // Centralized run loop, driven by per-player state
+        public void UpdateRunState(int playerID, bool isRunning)
         {
-            if (runSound != null && sfxSource != null)
+            if (playerID == 1) p1Running = isRunning; else p2Running = isRunning;
+            bool anyRunning = p1Running || p2Running;
+
+            if (runSound != null && runSource != null)
             {
-                // Only play if not already playing to avoid overlapping
-                if (!sfxSource.isPlaying || sfxSource.clip != runSound)
+                if (anyRunning)
                 {
-                    sfxSource.clip = runSound;
-                    sfxSource.loop = true;
-                    sfxSource.Play();
+                    if (!runSource.isPlaying || runSource.clip != runSound)
+                    {
+                        runSource.clip = runSound;
+                        runSource.loop = true;
+                        runSource.Play();
+                    }
                 }
-            }
-        }
-        
-        public void StopRunSound()
-        {
-            if (sfxSource != null && sfxSource.clip == runSound)
-            {
-                sfxSource.loop = false;
-                sfxSource.Stop();
+                else
+                {
+                    if (runSource.clip == runSound)
+                    {
+                        runSource.loop = false;
+                        runSource.Stop();
+                    }
+                }
             }
         }
         
         // Player-specific attack and skill sounds
         public void PlayAttackSound(int playerID)
         {
-            AudioClip clip = (playerID == 1) ? attackSoundP1 : attackSoundP2;
+            AudioClip clip = null;
+            if (playerID == 1)
+            {
+                clip = attackSoundP1;
+            }
+            else
+            {
+                clip = attackSoundP2 != null ? attackSoundP2 : attackSoundP1; // fallback to P1 if P2 missing
+            }
             if (clip != null && sfxSource != null)
             {
                 sfxSource.PlayOneShot(clip);
@@ -196,7 +228,15 @@ namespace InnerDuel.Audio
         
         public void PlaySkill1Sound(int playerID)
         {
-            AudioClip clip = (playerID == 1) ? skill1SoundP1 : skill1SoundP2;
+            AudioClip clip = null;
+            if (playerID == 1)
+            {
+                clip = skill1SoundP1;
+            }
+            else
+            {
+                clip = skill1SoundP2 != null ? skill1SoundP2 : skill1SoundP1;
+            }
             if (clip != null && sfxSource != null)
             {
                 sfxSource.PlayOneShot(clip);
@@ -205,7 +245,15 @@ namespace InnerDuel.Audio
         
         public void PlaySkill2Sound(int playerID)
         {
-            AudioClip clip = (playerID == 1) ? skill2SoundP1 : skill2SoundP2;
+            AudioClip clip = null;
+            if (playerID == 1)
+            {
+                clip = skill2SoundP1;
+            }
+            else
+            {
+                clip = skill2SoundP2 != null ? skill2SoundP2 : skill2SoundP1;
+            }
             if (clip != null && sfxSource != null)
             {
                 sfxSource.PlayOneShot(clip);
@@ -214,7 +262,15 @@ namespace InnerDuel.Audio
         
         public void PlaySkill3Sound(int playerID)
         {
-            AudioClip clip = (playerID == 1) ? skill3SoundP1 : skill3SoundP2;
+            AudioClip clip = null;
+            if (playerID == 1)
+            {
+                clip = skill3SoundP1;
+            }
+            else
+            {
+                clip = skill3SoundP2 != null ? skill3SoundP2 : skill3SoundP1;
+            }
             if (clip != null && sfxSource != null)
             {
                 sfxSource.PlayOneShot(clip);
@@ -224,33 +280,59 @@ namespace InnerDuel.Audio
         // Player 2 explosion sounds
         public void PlayExploreAttackSound()
         {
-            if (exploreAttackSound != null && sfxSource != null)
+            if (sfxSource == null) return;
+            if (exploreAttackSound != null)
             {
                 sfxSource.PlayOneShot(exploreAttackSound);
+            }
+            else
+            {
+                // Fallback to attack SFX (P2 preferred, else P1)
+                var fallback = attackSoundP2 != null ? attackSoundP2 : attackSoundP1;
+                if (fallback != null) sfxSource.PlayOneShot(fallback);
             }
         }
         
         public void PlayExploreSkill1Sound()
         {
-            if (exploreSkill1Sound != null && sfxSource != null)
+            if (sfxSource == null) return;
+            if (exploreSkill1Sound != null)
             {
                 sfxSource.PlayOneShot(exploreSkill1Sound);
+            }
+            else
+            {
+                // Fallback to skill1 SFX (P2 preferred, else P1)
+                var fallback = skill1SoundP2 != null ? skill1SoundP2 : skill1SoundP1;
+                if (fallback != null) sfxSource.PlayOneShot(fallback);
             }
         }
         
         public void PlayExploreSkill2Sound()
         {
-            if (exploreSkill2Sound != null && sfxSource != null)
+            if (sfxSource == null) return;
+            if (exploreSkill2Sound != null)
             {
                 sfxSource.PlayOneShot(exploreSkill2Sound);
+            }
+            else
+            {
+                var fallback = skill2SoundP2 != null ? skill2SoundP2 : skill2SoundP1;
+                if (fallback != null) sfxSource.PlayOneShot(fallback);
             }
         }
         
         public void PlayExploreSkill3Sound()
         {
-            if (exploreSkill3Sound != null && sfxSource != null)
+            if (sfxSource == null) return;
+            if (exploreSkill3Sound != null)
             {
                 sfxSource.PlayOneShot(exploreSkill3Sound);
+            }
+            else
+            {
+                var fallback = skill3SoundP2 != null ? skill3SoundP2 : skill3SoundP1;
+                if (fallback != null) sfxSource.PlayOneShot(fallback);
             }
         }
         
