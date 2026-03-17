@@ -20,6 +20,7 @@ namespace InnerDuel.Characters
         public float jumpForceMultiplier = 1f;
 
         [Header("Combat References")]
+        public Transform normalAttackPoint;
         public Transform attack1Point;
         public Transform attack2Point;
         public Transform attack3Point;
@@ -64,6 +65,7 @@ namespace InnerDuel.Characters
         private bool jumpQueued;
         
         // Timers
+        private float normalAttackCooldown = 0f;
         private float attack1Cooldown = 0f;
         private float attack2Cooldown = 0f;
         private float attack3Cooldown = 0f;
@@ -83,6 +85,7 @@ namespace InnerDuel.Characters
         private int animIsBlocking;
         private int animIsDead;
         private int animHit;
+        private int animNormalAttack;
         private int animAttack1;
         private int animAttack2;
         private int animAttack3;
@@ -109,6 +112,7 @@ namespace InnerDuel.Characters
             animIsBlocking = Animator.StringToHash("IsBlocking");
             animIsDead = Animator.StringToHash("IsDead");
             animHit = Animator.StringToHash("Hit");
+            animNormalAttack = Animator.StringToHash("NormalAttack");
             animAttack1 = Animator.StringToHash("Attack1");
             animAttack2 = Animator.StringToHash("Attack2");
             animAttack3 = Animator.StringToHash("Attack3");
@@ -158,6 +162,14 @@ namespace InnerDuel.Characters
                 go.transform.SetParent(transform);
                 go.transform.localPosition = new Vector3(0f, -0.6f, 0f);
                 groundCheck = go.transform;
+            }
+
+            if (normalAttackPoint == null)
+            {
+                var go = new GameObject("NormalAttackPoint");
+                go.transform.SetParent(transform);
+                go.transform.localPosition = new Vector3(0.6f, 0f, 0f);
+                normalAttackPoint = go.transform;
             }
 
             if (attack1Point == null)
@@ -235,6 +247,7 @@ namespace InnerDuel.Characters
 
         private void UpdateTimers()
         {
+            if (normalAttackCooldown > 0) normalAttackCooldown -= Time.deltaTime;
             if (attack1Cooldown > 0) attack1Cooldown -= Time.deltaTime;
             if (attack2Cooldown > 0) attack2Cooldown -= Time.deltaTime;
             if (attack3Cooldown > 0) attack3Cooldown -= Time.deltaTime;
@@ -275,7 +288,11 @@ namespace InnerDuel.Characters
             // Attacks
             if (canMove && !isBlocking && !isDashing) // Can attack while moving (air or ground) usually? Let's say yes but it locks movement
             {
-                if (inputManager.GetButtonDown(playerID, "Attack1") && attack1Cooldown <= 0)
+                if (inputManager.GetButtonDown(playerID, "NormalAttack") && normalAttackCooldown <= 0)
+                {
+                    PerformNormalAttack();
+                }
+                else if (inputManager.GetButtonDown(playerID, "Attack1") && attack1Cooldown <= 0)
                 {
                     PerformAttack(1);
                 }
@@ -414,6 +431,7 @@ namespace InnerDuel.Characters
             
             // Flip Attack Points
             float direction = faceRight ? 1f : -1f;
+            UpdateAttackPoint(normalAttackPoint, direction);
             UpdateAttackPoint(attack1Point, direction);
             UpdateAttackPoint(attack2Point, direction);
             UpdateAttackPoint(attack3Point, direction);
@@ -425,6 +443,36 @@ namespace InnerDuel.Characters
             if (point == null) return;
             Vector3 pos = point.localPosition;
             point.localPosition = new Vector3(Mathf.Abs(pos.x) * direction, pos.y, pos.z);
+        }
+
+        private void PerformNormalAttack()
+        {
+            isAttacking = true;
+            canMove = false;
+            rb.velocity = new Vector2(0, rb.velocity.y); // Stop moving when attacking
+
+            float damage = characterData != null ? characterData.normalAttackDamage : 8f;
+            float range = characterData != null ? characterData.normalAttackRange : 0.8f;
+            float cooldown = characterData != null ? characterData.normalAttackCooldown : 0.35f;
+
+            normalAttackCooldown = cooldown;
+
+            // Animation
+            if (animator != null)
+            {
+                animator.SetTrigger(animNormalAttack);
+                animator.SetBool(animIsAttacking, true);
+            }
+
+            // Melee Hitbox
+            StartCoroutine(MeleeAttackRoutine(0.15f, normalAttackPoint, range, damage));
+
+            // Reset State
+            float recoveryTime = 0.3f;
+            StartCoroutine(ResetAttackState(recoveryTime));
+            
+            // Notify abilities
+            foreach (var ability in abilities) ability.OnAttack();
         }
 
         private void PerformAttack(int attackIndex)
@@ -698,6 +746,11 @@ namespace InnerDuel.Characters
             {
                 Gizmos.color = Color.green;
                 Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+            }
+            if (normalAttackPoint != null)
+            {
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawWireSphere(normalAttackPoint.position, characterData != null ? characterData.normalAttackRange : 0.4f);
             }
             if (attack1Point != null)
             {

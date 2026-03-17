@@ -16,6 +16,7 @@ namespace InnerDuel.Input
         private PlayerInput playerInput;
         private InputAction moveAction1, moveAction2;
         private InputAction jumpAction1, jumpAction2;
+        private InputAction normalAttackAction1, normalAttackAction2;
         private InputAction attack1Action1, attack1Action2;
         private InputAction attack2Action1, attack2Action2;
         private InputAction attack3Action1, attack3Action2;
@@ -26,6 +27,8 @@ namespace InnerDuel.Input
         public Vector2 MoveInput2 { get; private set; }
         public bool JumpPressed1 { get; private set; }
         public bool JumpPressed2 { get; private set; }
+        public bool NormalAttackPressed1 { get; private set; }
+        public bool NormalAttackPressed2 { get; private set; }
         public bool Attack1Pressed1 { get; private set; }
         public bool Attack1Pressed2 { get; private set; }
         public bool Attack2Pressed1 { get; private set; }
@@ -65,6 +68,9 @@ namespace InnerDuel.Input
             dashAction1 = inputActions.Player1.FindAction("Dash");
             dashAction2 = inputActions.Player2.FindAction("Dash");
             
+            normalAttackAction1 = inputActions.Player1.FindAction("NormalAttack");
+            normalAttackAction2 = inputActions.Player2.FindAction("NormalAttack");
+            
             attack1Action1 = inputActions.Player1.FindAction("Attack1");
             attack1Action2 = inputActions.Player2.FindAction("Attack1");
             
@@ -87,6 +93,8 @@ namespace InnerDuel.Input
             blockAction2?.Enable();
             dashAction1?.Enable();
             dashAction2?.Enable();
+            normalAttackAction1?.Enable();
+            normalAttackAction2?.Enable();
             attack1Action1?.Enable();
             attack1Action2?.Enable();
             attack2Action1?.Enable();
@@ -107,6 +115,9 @@ namespace InnerDuel.Input
             // OR let the GetButtonDown handle it. 
             // Actually, to mimic GetButtonDown(PressedThisFrame), we should reset them in LateUpdate.
             
+            NormalAttackPressed1 = normalAttackAction1?.triggered ?? false;
+            NormalAttackPressed2 = normalAttackAction2?.triggered ?? false;
+
             Attack1Pressed1 = attack1Action1?.triggered ?? false;
             Attack1Pressed2 = attack1Action2?.triggered ?? false;
             
@@ -138,6 +149,7 @@ namespace InnerDuel.Input
                     switch (actionName)
                     {
                         case "Jump": return JumpPressed1;
+                        case "NormalAttack": return NormalAttackPressed1;
                         case "Attack1": return Attack1Pressed1;
                         case "Attack2": return Attack2Pressed1;
                         case "Attack3": return Attack3Pressed1;
@@ -148,6 +160,7 @@ namespace InnerDuel.Input
                     switch (actionName)
                     {
                         case "Jump": return JumpPressed2;
+                        case "NormalAttack": return NormalAttackPressed2;
                         case "Attack1": return Attack1Pressed2;
                         case "Attack2": return Attack2Pressed2;
                         case "Attack3": return Attack3Pressed2;

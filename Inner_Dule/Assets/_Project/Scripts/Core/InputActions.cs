@@ -44,9 +44,10 @@ namespace InnerDuel.Input
             Player1.AddAction("Block", InputActionType.Button, "<Keyboard>/s"); 
             Player1.AddAction("Dash", InputActionType.Button, "<Keyboard>/leftShift");
             
-            Player1.AddAction("Attack1", InputActionType.Button, "<Keyboard>/j");
-            Player1.AddAction("Attack2", InputActionType.Button, "<Keyboard>/k");
-            Player1.AddAction("Attack3", InputActionType.Button, "<Keyboard>/l");
+            Player1.AddAction("NormalAttack", InputActionType.Button, "<Keyboard>/j");
+            Player1.AddAction("Attack1", InputActionType.Button, "<Keyboard>/k");
+            Player1.AddAction("Attack2", InputActionType.Button, "<Keyboard>/l");
+            Player1.AddAction("Attack3", InputActionType.Button, "<Keyboard>/u");
             
             // Setup Player 2 actions
             var p2Move = Player2.AddAction("Move", InputActionType.Value);
@@ -61,9 +62,10 @@ namespace InnerDuel.Input
             Player2.AddAction("Block", InputActionType.Button, "<Keyboard>/downArrow");
             Player2.AddAction("Dash", InputActionType.Button, "<Keyboard>/rightShift");
             
-            Player2.AddAction("Attack1", InputActionType.Button, "<Keyboard>/numpad1");
-            Player2.AddAction("Attack2", InputActionType.Button, "<Keyboard>/numpad2");
-            Player2.AddAction("Attack3", InputActionType.Button, "<Keyboard>/numpad3");
+            Player2.AddAction("NormalAttack", InputActionType.Button, "<Keyboard>/numpad1");
+            Player2.AddAction("Attack1", InputActionType.Button, "<Keyboard>/numpad2");
+            Player2.AddAction("Attack2", InputActionType.Button, "<Keyboard>/numpad3");
+            Player2.AddAction("Attack3", InputActionType.Button, "<Keyboard>/numpad4");
             
             // Enable all actions
             Player1.Enable();
