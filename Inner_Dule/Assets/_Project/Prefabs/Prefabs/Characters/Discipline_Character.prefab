@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 3362815003050688132}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.74, y: -0.399, z: 0}
+  m_LocalPosition: {x: 4.86, y: -0.29, z: 0}
   m_LocalScale: {x: 1, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -56,8 +56,39 @@ Transform:
   m_GameObject: {fileID: 3946879793372849802}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.27, y: -0.44, z: -0.040211882}
+  m_LocalPosition: {x: 4.73, y: 0.16, z: -0.040211882}
   m_LocalScale: {x: 0.47319824, y: 0.45233476, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5084477023580807283}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4790376321500967456
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6051228490454215921}
+  m_Layer: 8
+  m_Name: NormalAttack
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6051228490454215921
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4790376321500967456}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.24, y: -0.319, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5084477023580807283}
@@ -87,7 +118,7 @@ Transform:
   m_GameObject: {fileID: 8229139701078201001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.9, y: -0.319, z: 0}
+  m_LocalPosition: {x: 4.24, y: -0.319, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -130,6 +161,7 @@ Transform:
   - {fileID: 6463427981581286706}
   - {fileID: 7665699952577603693}
   - {fileID: 3100526120289862553}
+  - {fileID: 6051228490454215921}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &5626336214160998163
@@ -246,9 +278,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterData: {fileID: 11400000, guid: 569c5d0f809630540ad0e58cf94bd243, type: 2}
   playerID: 1
-  attackPoint: {fileID: 7665699952577603693}
-  attackRange: 1
+  moveSpeedMultiplier: 1
+  jumpForceMultiplier: 1
+  normalAttackPoint: {fileID: 0}
+  attack1Point: {fileID: 0}
+  attack2Point: {fileID: 0}
+  attack3Point: {fileID: 0}
+  projectileSpawnPoint: {fileID: 0}
   opponentLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  groundCheck: {fileID: 0}
+  groundCheckRadius: 0.2
+  groundLayer:
     serializedVersion: 2
     m_Bits: 0
   healthBar: {fileID: 0}
