@@ -33,7 +33,11 @@ namespace InnerDuel.Characters
         private void Update()
         {
             // Update delayed health bar for smooth effect
-            if (delayedHealthSlider != null && currentDelayedHealth != targetHealth)
+            // QUAN TRỌNG: Chỉ dùng delayed effect khi delayedHealthSlider là slider KHÁC với healthSlider.
+            // Nếu cả hai trỏ cùng 1 Slider → sẽ gây xung đột ghi đè → thanh máu tăng/giảm liên tục.
+            if (delayedHealthSlider != null 
+                && delayedHealthSlider != healthSlider 
+                && currentDelayedHealth != targetHealth)
             {
                 currentDelayedHealth = Mathf.MoveTowards(
                     currentDelayedHealth, 
