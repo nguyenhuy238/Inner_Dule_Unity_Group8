@@ -3,42 +3,55 @@ using Cinemachine;
 
 namespace InnerDuel.Camera
 {
+    /// <summary>
+    /// Manages the 2D fighting game camera using Cinemachine.
+    /// Tracks two players, maintains them both on screen, and adjusts zoom based on horizontal distance.
+    /// </summary>
     public class CameraController : MonoBehaviour
     {
-        [Header("Cinemachine Setup")]
+        [Header("Cinemachine Components")]
+        [Tooltip("The virtual camera that will be controlled.")]
         public CinemachineVirtualCamera virtualCamera;
+        [Tooltip("The target group containing the players.")]
         public CinemachineTargetGroup targetGroup;
-        
-        [Header("Camera Settings")]
-        public float minDistance = 8f;
-        public float maxDistance = 20f;
-        public bool useFixedZoom = true;
-        public float fixedZoom = 12f;
-        public float zoomSpeed = 2f;
-        public float followSpeed = 5f;
+
+        [Header("Zoom Settings")]
+        [Tooltip("Minimum orthographic size when players are close.")]
+        public float minZoom = 5f;
+        [Tooltip("Maximum orthographic size when players are far apart.")]
+        public float maxZoom = 10f;
+        [Tooltip("Multiplier for how much distance affects zoom (targetSize = minZoom + distance * multiplier).")]
+        public float zoomMultiplier = 0.5f;
+        [Tooltip("How smoothly the camera zooms (lower value = faster).")]
+        public float zoomSmoothTime = 0.1f;
+
+        [Header("Framing Settings")]
+        [Tooltip("Damping for camera movement. Adjust in Cinemachine Framing Transposer for more control.")]
+        public float movementDamping = 0.1f;
 
         [Header("Camera Confiner")]
+        [Tooltip("Enable to confine the camera within a specific area.")]
         public bool enableCameraBound = true;
+        [Tooltip("The collider used to define the camera's boundaries (must be PolygonCollider2D or CompositeCollider2D).")]
         public Collider2D confinerCollider;
-        public Vector2 minCameraPos = new Vector2(-50f, -50f);
-        public Vector2 maxCameraPos = new Vector2(50f, 50f);
-        
+
         [Header("Ending Sequence")]
         public float endingZoomDuration = 2f;
         public float endingFinalZoom = 3f;
-        
+
         private Transform player1;
         private Transform player2;
         private bool isEndingSequence = false;
         private float endingTimer = 0f;
-        private Vector3 endingPosition;
-        
+        private float currentZoomVelocity;
+        private float initialOrthographicSize;
+
         private void Start()
         {
             SetupCamera();
         }
-        
-        private void Update()
+
+        private void LateUpdate()
         {
             if (isEndingSequence)
             {
@@ -46,51 +59,46 @@ namespace InnerDuel.Camera
             }
             else
             {
-                UpdateCameraPosition();
+                UpdateCameraZoom();
             }
         }
-        
+
         private void SetupCamera()
         {
             if (virtualCamera == null)
             {
-                virtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
+                virtualCamera = GetComponentInChildren<CinemachineVirtualCamera>();
+                if (virtualCamera == null) virtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
             }
-            
+
             if (targetGroup == null)
             {
-                targetGroup = FindObjectOfType<CinemachineTargetGroup>();
+                targetGroup = GetComponentInChildren<CinemachineTargetGroup>();
+                if (targetGroup == null) targetGroup = FindObjectOfType<CinemachineTargetGroup>();
             }
 
-            // Ensure Cinemachine is actually driving the Main Camera at runtime.
-            // Without a CinemachineBrain, Virtual Cameras won't affect the Camera view.
-            if (GetComponent<CinemachineBrain>() == null)
+            // Ensure CinemachineBrain exists on Main Camera
+            var mainCamera = UnityEngine.Camera.main;
+            if (mainCamera != null && mainCamera.GetComponent<CinemachineBrain>() == null)
             {
-                gameObject.AddComponent<CinemachineBrain>();
-            }
-            
-            // Setup target group if it doesn't exist
-            if (targetGroup == null && virtualCamera != null)
-            {
-                targetGroup = gameObject.AddComponent<CinemachineTargetGroup>();
-                virtualCamera.Follow = targetGroup.transform;
-                virtualCamera.LookAt = targetGroup.transform;
+                mainCamera.gameObject.AddComponent<CinemachineBrain>();
             }
 
-            EnsureVirtualCameraRig();
+            ConfigureCinemachineComponents();
         }
 
-        private void EnsureVirtualCameraRig()
+        private void ConfigureCinemachineComponents()
         {
             if (virtualCamera == null || targetGroup == null) return;
 
-            // In your scene, vcam can accidentally be set to follow the Main Camera itself.
-            // That makes the camera jump away from gameplay when Cinemachine goes Live.
             virtualCamera.Follow = targetGroup.transform;
-            virtualCamera.LookAt = targetGroup.transform;
+            virtualCamera.LookAt = null;
 
-            // Ensure Follow actually moves the camera (Body must not be "Do Nothing").
-            // For 2D, FramingTransposer is a safe default.
+            // Configure Lens
+            virtualCamera.m_Lens.Orthographic = true;
+            initialOrthographicSize = virtualCamera.m_Lens.OrthographicSize;
+
+            // Configure Framing Transposer
             var framing = virtualCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
             if (framing == null)
             {
@@ -103,197 +111,112 @@ namespace InnerDuel.Camera
             framing.m_DeadZoneHeight = 0f;
             framing.m_SoftZoneWidth = 0f;
             framing.m_SoftZoneHeight = 0f;
-            framing.m_BiasX = 0f;
-            framing.m_BiasY = 0f;
-            framing.m_XDamping = 0f;
-            framing.m_YDamping = 0f;
+            framing.m_XDamping = movementDamping;
+            framing.m_YDamping = movementDamping;
             framing.m_ZDamping = 0f;
+            framing.m_GroupFramingMode = CinemachineFramingTransposer.FramingMode.None;
 
-            // Set a strict camera size if enabled (no smooth zooming)
-            if (virtualCamera != null)
+            // Configure Confiner
+            if (enableCameraBound && confinerCollider != null)
             {
-                virtualCamera.m_Lens.Orthographic = true;
-                virtualCamera.m_Lens.OrthographicSize = useFixedZoom ? fixedZoom : Mathf.Clamp(virtualCamera.m_Lens.OrthographicSize, minDistance, maxDistance);
-            }
-
-            // If vcam transform was authored at a weird Z, keep a standard 2D camera distance.
-            var p = virtualCamera.transform.position;
-            if (p.z > -0.5f) virtualCamera.transform.position = new Vector3(p.x, p.y, -10f);
-
-            // Add confiner if needed
-            if (enableCameraBound)
-            {
-                var confiner = virtualCamera.GetComponent<Cinemachine.CinemachineConfiner>();
-                if (confiner == null)
-                {
-                    confiner = virtualCamera.gameObject.AddComponent<Cinemachine.CinemachineConfiner>();
-                }
-
-                if (confinerCollider != null)
-                {
-                    confiner.m_BoundingShape2D = confinerCollider as PolygonCollider2D;
-                    confiner.m_ConfineMode = Cinemachine.CinemachineConfiner.Mode.Confine2D;
-                    confiner.m_Damping = 0f;
-                    confiner.m_ConfineScreenEdges = true;
-                    confiner.InvalidatePathCache();
-                }
+                var confiner = virtualCamera.GetComponent<CinemachineConfiner>();
+                if (confiner == null) confiner = virtualCamera.gameObject.AddComponent<CinemachineConfiner>();
+                
+                confiner.m_BoundingShape2D = confinerCollider;
+                confiner.m_ConfineMode = CinemachineConfiner.Mode.Confine2D;
+                confiner.m_Damping = 0f;
+                confiner.InvalidatePathCache();
             }
         }
-        
+
         public void SetTargets(Transform p1, Transform p2)
         {
             player1 = p1;
             player2 = p2;
-            
+
             if (targetGroup != null)
             {
-                // Clear existing targets
+                // Clear and rebuild target group
                 targetGroup.m_Targets = new CinemachineTargetGroup.Target[0];
-                
-                // Add player targets
-                if (player1 != null)
-                {
-                    targetGroup.AddMember(player1, 1f, 0f);
-                }
-                
-                if (player2 != null)
-                {
-                    targetGroup.AddMember(player2, 1f, 0f);
-                }
+
+                if (player1 != null) targetGroup.AddMember(player1, 1f, 0f);
+                if (player2 != null) targetGroup.AddMember(player2, 1f, 0f);
             }
 
-            EnsureVirtualCameraRig();
+            ResetCamera();
         }
-        
-        private void UpdateCameraPosition()
+
+        private void UpdateCameraZoom()
         {
-            if ((player1 == null && player2 == null) || targetGroup == null || virtualCamera == null) return;
+            if (player1 == null || player2 == null || virtualCamera == null) return;
 
-            Vector3 center;
-            if (player1 != null && player2 != null)
-            {
-                center = (player1.position + player2.position) / 2f;
-            }
-            else if (player1 != null)
-            {
-                center = player1.position;
-            }
-            else
-            {
-                center = player2.position;
-            }
+            // Requirement 2 & 9: Horizontal distance only
+            float distance = Mathf.Abs(player1.position.x - player2.position.x);
 
-            // Set camera size immediately (no smooth zoom)
-            float targetSize;
-            if (useFixedZoom)
-            {
-                targetSize = fixedZoom;
-            }
-            else
-            {
-                float distance = player1 != null && player2 != null ? Vector3.Distance(player1.position, player2.position) : fixedZoom;
-                targetSize = Mathf.Clamp(distance * 0.8f, minDistance, maxDistance);
-            }
-            virtualCamera.m_Lens.OrthographicSize = targetSize;
+            // Requirement 2 & 3 & 4: Calculate target zoom
+            float targetSize = minZoom + (distance * zoomMultiplier);
+            targetSize = Mathf.Clamp(targetSize, minZoom, maxZoom);
 
-            // Ensure there is no damping from Cinemachine Body
-            var framing = virtualCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
-            if (framing != null)
-            {
-                framing.m_XDamping = 0f;
-                framing.m_YDamping = 0f;
-                framing.m_ZDamping = 0f;
-                framing.m_DeadZoneWidth = 0f;
-                framing.m_DeadZoneHeight = 0f;
-                framing.m_SoftZoneWidth = 0f;
-                framing.m_SoftZoneHeight = 0f;
-            }
-
-            // Position directly at player center
-            var destination = new Vector3(center.x, center.y, virtualCamera.transform.position.z);
-
-            if (enableCameraBound)
-            {
-                if (confinerCollider != null)
-                {
-                    // clamp inside polygon bounds using collider bounds as fallback
-                    var b = confinerCollider.bounds;
-                    float halfHeight = targetSize;
-                    float halfWidth = targetSize * (UnityEngine.Camera.main != null ? UnityEngine.Camera.main.aspect : 1f);
-                    destination.x = Mathf.Clamp(destination.x, b.min.x + halfWidth, b.max.x - halfWidth);
-                    destination.y = Mathf.Clamp(destination.y, b.min.y + halfHeight, b.max.y - halfHeight);
-                }
-                else
-                {
-                    destination.x = Mathf.Clamp(destination.x, minCameraPos.x, maxCameraPos.x);
-                    destination.y = Mathf.Clamp(destination.y, minCameraPos.y, maxCameraPos.y);
-                }
-            }
-
-            virtualCamera.transform.position = destination;
+            // Requirement 8: Smooth zoom
+            virtualCamera.m_Lens.OrthographicSize = Mathf.SmoothDamp(
+                virtualCamera.m_Lens.OrthographicSize,
+                targetSize,
+                ref currentZoomVelocity,
+                zoomSmoothTime
+            );
         }
-        
+
         public void StartEndingSequence(Transform winnerTransform)
         {
             isEndingSequence = true;
             endingTimer = 0f;
-            
-            if (winnerTransform != null)
-            {
-                endingPosition = winnerTransform.position;
-            }
-            
-            // Switch to single target follow
-            if (virtualCamera != null)
+            initialOrthographicSize = virtualCamera.m_Lens.OrthographicSize;
+
+            if (winnerTransform != null && virtualCamera != null)
             {
                 virtualCamera.Follow = winnerTransform;
             }
         }
-        
+
         private void HandleEndingSequence()
         {
             endingTimer += Time.deltaTime;
-            
+            float progress = Mathf.Clamp01(endingTimer / endingZoomDuration);
+
             if (virtualCamera != null)
             {
-                // Gradually zoom in on winner
-                float progress = endingTimer / endingZoomDuration;
-                float targetSize = Mathf.Lerp(virtualCamera.m_Lens.OrthographicSize, endingFinalZoom, progress);
-                virtualCamera.m_Lens.OrthographicSize = targetSize;
+                // Smoothly zoom in on the winner
+                virtualCamera.m_Lens.OrthographicSize = Mathf.Lerp(initialOrthographicSize, endingFinalZoom, progress);
             }
-            
-            // Add slow-motion effect
-            if (endingTimer < 1f)
+
+            // Slow motion effect
+            if (progress < 1f)
             {
-                Time.timeScale = Mathf.Lerp(1f, 0.3f, endingTimer);
+                Time.timeScale = Mathf.Lerp(1f, 0.3f, progress);
             }
         }
-        
+
         public void ResetCamera()
         {
             isEndingSequence = false;
             endingTimer = 0f;
             Time.timeScale = 1f;
-            
-            // Reset to target group follow
-            if (targetGroup != null)
+            currentZoomVelocity = 0f;
+
+            if (targetGroup != null && virtualCamera != null)
             {
                 virtualCamera.Follow = targetGroup.transform;
             }
         }
-        
-        private void OnDrawGizmosSelected()
+
+        private void OnDrawGizmos()
         {
             if (player1 != null && player2 != null)
             {
                 Gizmos.color = Color.yellow;
+                Vector3 midpoint = (player1.position + player2.position) * 0.5f;
                 Gizmos.DrawLine(player1.position, player2.position);
-                
-                // Draw camera bounds
-                Gizmos.color = Color.cyan;
-                Vector3 center = (player1.position + player2.position) / 2f;
-                float distance = Vector3.Distance(player1.position, player2.position);
-                Gizmos.DrawWireCube(center, new Vector3(distance, distance * 0.6f, 0));
+                Gizmos.DrawWireSphere(midpoint, 0.5f);
             }
         }
     }
