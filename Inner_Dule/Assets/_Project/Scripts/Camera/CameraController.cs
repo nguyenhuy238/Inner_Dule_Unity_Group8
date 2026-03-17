@@ -12,8 +12,16 @@ namespace InnerDuel.Camera
         [Header("Camera Settings")]
         public float minDistance = 8f;
         public float maxDistance = 20f;
+        public bool useFixedZoom = true;
+        public float fixedZoom = 12f;
         public float zoomSpeed = 2f;
         public float followSpeed = 5f;
+
+        [Header("Camera Confiner")]
+        public bool enableCameraBound = true;
+        public Collider2D confinerCollider;
+        public Vector2 minCameraPos = new Vector2(-50f, -50f);
+        public Vector2 maxCameraPos = new Vector2(50f, 50f);
         
         [Header("Ending Sequence")]
         public float endingZoomDuration = 2f;
@@ -93,17 +101,43 @@ namespace InnerDuel.Camera
             framing.m_ScreenY = 0.5f;
             framing.m_DeadZoneWidth = 0f;
             framing.m_DeadZoneHeight = 0f;
-            framing.m_SoftZoneWidth = 0.8f;
-            framing.m_SoftZoneHeight = 0.8f;
+            framing.m_SoftZoneWidth = 0f;
+            framing.m_SoftZoneHeight = 0f;
             framing.m_BiasX = 0f;
             framing.m_BiasY = 0f;
-            framing.m_XDamping = followSpeed;
-            framing.m_YDamping = followSpeed;
-            framing.m_ZDamping = followSpeed;
+            framing.m_XDamping = 0f;
+            framing.m_YDamping = 0f;
+            framing.m_ZDamping = 0f;
+
+            // Set a strict camera size if enabled (no smooth zooming)
+            if (virtualCamera != null)
+            {
+                virtualCamera.m_Lens.Orthographic = true;
+                virtualCamera.m_Lens.OrthographicSize = useFixedZoom ? fixedZoom : Mathf.Clamp(virtualCamera.m_Lens.OrthographicSize, minDistance, maxDistance);
+            }
 
             // If vcam transform was authored at a weird Z, keep a standard 2D camera distance.
             var p = virtualCamera.transform.position;
             if (p.z > -0.5f) virtualCamera.transform.position = new Vector3(p.x, p.y, -10f);
+
+            // Add confiner if needed
+            if (enableCameraBound)
+            {
+                var confiner = virtualCamera.GetComponent<Cinemachine.CinemachineConfiner>();
+                if (confiner == null)
+                {
+                    confiner = virtualCamera.gameObject.AddComponent<Cinemachine.CinemachineConfiner>();
+                }
+
+                if (confinerCollider != null)
+                {
+                    confiner.m_BoundingShape2D = confinerCollider as PolygonCollider2D;
+                    confiner.m_ConfineMode = Cinemachine.CinemachineConfiner.Mode.Confine2D;
+                    confiner.m_Damping = 0f;
+                    confiner.m_ConfineScreenEdges = true;
+                    confiner.InvalidatePathCache();
+                }
+            }
         }
         
         public void SetTargets(Transform p1, Transform p2)
@@ -133,20 +167,70 @@ namespace InnerDuel.Camera
         
         private void UpdateCameraPosition()
         {
-            if (player1 == null || player2 == null || targetGroup == null) return;
-            
-            // Calculate distance between players
-            float distance = Vector3.Distance(player1.position, player2.position);
-            
-            // Adjust camera orthographic size based on distance
-            float targetSize = Mathf.Clamp(distance * 0.8f, minDistance, maxDistance);
-            
-            if (virtualCamera != null)
+            if ((player1 == null && player2 == null) || targetGroup == null || virtualCamera == null) return;
+
+            Vector3 center;
+            if (player1 != null && player2 != null)
             {
-                // Smoothly adjust camera size
-                float currentSize = virtualCamera.m_Lens.OrthographicSize;
-                virtualCamera.m_Lens.OrthographicSize = Mathf.Lerp(currentSize, targetSize, zoomSpeed * Time.deltaTime);
+                center = (player1.position + player2.position) / 2f;
             }
+            else if (player1 != null)
+            {
+                center = player1.position;
+            }
+            else
+            {
+                center = player2.position;
+            }
+
+            // Set camera size immediately (no smooth zoom)
+            float targetSize;
+            if (useFixedZoom)
+            {
+                targetSize = fixedZoom;
+            }
+            else
+            {
+                float distance = player1 != null && player2 != null ? Vector3.Distance(player1.position, player2.position) : fixedZoom;
+                targetSize = Mathf.Clamp(distance * 0.8f, minDistance, maxDistance);
+            }
+            virtualCamera.m_Lens.OrthographicSize = targetSize;
+
+            // Ensure there is no damping from Cinemachine Body
+            var framing = virtualCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
+            if (framing != null)
+            {
+                framing.m_XDamping = 0f;
+                framing.m_YDamping = 0f;
+                framing.m_ZDamping = 0f;
+                framing.m_DeadZoneWidth = 0f;
+                framing.m_DeadZoneHeight = 0f;
+                framing.m_SoftZoneWidth = 0f;
+                framing.m_SoftZoneHeight = 0f;
+            }
+
+            // Position directly at player center
+            var destination = new Vector3(center.x, center.y, virtualCamera.transform.position.z);
+
+            if (enableCameraBound)
+            {
+                if (confinerCollider != null)
+                {
+                    // clamp inside polygon bounds using collider bounds as fallback
+                    var b = confinerCollider.bounds;
+                    float halfHeight = targetSize;
+                    float halfWidth = targetSize * (UnityEngine.Camera.main != null ? UnityEngine.Camera.main.aspect : 1f);
+                    destination.x = Mathf.Clamp(destination.x, b.min.x + halfWidth, b.max.x - halfWidth);
+                    destination.y = Mathf.Clamp(destination.y, b.min.y + halfHeight, b.max.y - halfHeight);
+                }
+                else
+                {
+                    destination.x = Mathf.Clamp(destination.x, minCameraPos.x, maxCameraPos.x);
+                    destination.y = Mathf.Clamp(destination.y, minCameraPos.y, maxCameraPos.y);
+                }
+            }
+
+            virtualCamera.transform.position = destination;
         }
         
         public void StartEndingSequence(Transform winnerTransform)
