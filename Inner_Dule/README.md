@@ -1,140 +1,34 @@
-# INNER DUEL: THE PATH TO HARMONY
+# Inner Dule - Cuộc Chiến Nội Tâm
 
-> *"Cuộc chiến nội tâm không phải để tiêu diệt, mà để tìm thấy sự cân bằng giữa các thái cực của bản thân."*
+**Inner Dule** là một trò chơi đối kháng 2D được phát triển bằng Unity, tập trung vào sự cân bằng giữa các khía cạnh đối lập trong tâm trí con người. Người chơi điều khiển các nhân vật đại diện cho các trạng thái tâm lý khác nhau (Kỷ luật vs Ngẫu hứng, Lý trí vs Cảm xúc) để tìm kiếm sự hòa hợp (Harmony).
 
-## Tổng quan
+## 🚀 Công Nghệ Sử Dụng
+- **Unity Engine**: 2022.3.x (hoặc mới hơn)
+- **Input System Package**: Xử lý input đa nền tảng và local multiplayer.
+- **Cinemachine**: Hệ thống camera động cho các trận đấu.
+- **TextMesh Pro**: Hiển thị UI chất lượng cao.
+- **Scriptable Objects**: Quản lý dữ liệu nhân vật và bản đồ.
 
-**INNER DUEL** là game đối kháng 2D cho 2 người chơi local, lấy chủ đề về cuộc chiến nội tâm bên trong con người. Người chơi điều khiển các "Bản ngã" đại diện cho những mặt đối lập trong suy nghĩ, với mục tiêu tìm kiếm sự cân bằng và hòa hợp.
+## 🕹️ Gameplay Loop (Vòng lặp trò chơi)
+1. **Khởi động**: `Bootstrap` khởi tạo các hệ thống cốt lõi.
+2. **Menu chính**: Người chơi chọn chế độ chơi.
+3. **Chọn nhân vật & Bản đồ**: Lưu lựa chọn vào `GameData`.
+4. **Trận đấu**: `GameManager` khởi tạo bản đồ và nhân vật.
+   - **Intro**: Giới thiệu các câu nói triết lý về nội tâm.
+   - **Gameplay**: Chiến đấu thời gian thực.
+   - **Ending**: Xác định người thắng và hiển thị thông điệp hòa hợp.
+5. **Kết quả**: Hiển thị màn hình kết quả và quay lại Menu.
 
-| Thông tin | Chi tiết |
-|:---|:---|
-| **Thể loại** | 2D Fighting – Local Multiplayer (2P) |
-| **Art Style** | Silhouette / Shadow Art |
-| **Engine** | Unity 2022.3 LTS |
-| **Trạng thái** | Prototype / Alpha |
+## 📂 Cấu Trúc Thư Mục Chính
+- `Assets/_Project/Scripts/Core`: Các hệ thống nền tảng (GameData, Singleton, Bootstrap).
+- `Assets/_Project/Scripts/Game`: Quản lý logic trận đấu (GameManager).
+- `Assets/_Project/Scripts/Character`: Điều khiển nhân vật và hệ thống kỹ năng.
+- `Assets/_Project/Scripts/UI`: Quản lý giao diện người dùng.
+- `Assets/_Project/Scenes`: Các màn chơi và bản đồ đấu trường.
+- `Assets/_Project/Data`: Các ScriptableObject chứa dữ liệu cấu hình.
 
----
-
-## Bắt đầu nhanh (Quick Start)
-
-### Yêu cầu
-- **Unity 2022.3 LTS** trở lên
-- **Git** + **Git LFS** đã cài đặt
-
-### Cài đặt
-
-```bash
-# 1. Clone repository
-git clone https://github.com/<org>/Inner_Dule_Unity_Group8.git
-cd Inner_Dule_Unity_Group8/Inner_Dule
-
-# 2. Pull LFS files (textures, audio...)
-git lfs pull
-
-# 3. Mở project trong Unity Hub → Add → chọn thư mục Inner_Dule
-```
-
-### Chạy game
-
-1. Mở scene **`Assets/_Project/Scenes/Scenes/MainGameScene.unity`**
-2. Nhấn **Play** ▶️
-3. Dùng bàn phím để điều khiển 2 nhân vật (xem phần **Điều khiển** bên dưới)
-
-> [!IMPORTANT]
-> **Luồng chạy đúng**: Bắt đầu từ scene **Bootstrap** (nếu có trong Build Settings) để đảm bảo các Manager được khởi tạo đúng. Nếu chỉ test nhanh, mở trực tiếp `MainGameScene` cũng hoạt động nhờ Singleton auto-create.
-
----
-
-## Hệ thống nhân vật
-
-Game có **8 nhân vật** chia thành **4 cặp thái cực đối lập**:
-
-| Cặp | Nhân vật 1 | Nhân vật 2 |
-|:---|:---|:---|
-| Kỷ Luật vs Ngẫu Hứng | **The Warden** – Parry & Phản đòn | **The Maverick** – Dash gây sát thương |
-| Lý Trí vs Sáng Tạo | **The Architect** – Tầm xa, bẫy | **The Muse** – Tầm đánh thay đổi |
-| Kiên Trì vs Từ Bỏ | **The Unbroken** – Càng bị đánh càng mạnh | **The Void** – Hút máu |
-| Tĩnh Lặng vs Thịnh Nộ | **The Zen** – Phản đòn | **The Berserker** – Berserk mode |
-
-> [!NOTE]
-> Hiện tại **The Warden** và **The Maverick** đã được hoàn thiện đầy đủ kỹ năng. Các nhân vật còn lại có thể kế thừa từ hệ thống Framework có sẵn (Projectile, Status Effects).
-
----
-
-## Điều khiển
-
-| Hành động | Player 1 (Trái) | Player 2 (Phải) |
-|:---|:---|:---|
-| **Di chuyển** | `W` `A` `S` `D` | `↑` `←` `↓` `→` |
-| **Tấn công** | `Space` | `Right Shift` |
-| **Phòng thủ** | `Left Shift` | `Right Ctrl` |
-| **Lướt (Dash)** | `Left Ctrl` | `Enter` |
-
----
-
-## Cấu trúc dự án
-
-```
-Inner_Dule/
-├── Assets/
-│   └── _Project/                  ← Root asset của dự án
-│       ├── Scripts/
-│       │   ├── Core/              ← Singleton, Bootstrap, InputManager, AudioManager
-│       │   ├── Game/              ← GameManager (state machine)
-│       │   ├── Character/         ← Controller, Factory, HealthBar, Data
-│       │   ├── Camera/            ← CameraController (Cinemachine)
-│       │   ├── UI/                ← UIManager, CharacterSelection
-│       │   ├── Effects/           ← ParticleEffectsManager
-│       │   └── Core/              ← StatusEffects, Projectiles
-│       ├── Scenes/Scenes/         ← MainGameScene, SampleScene
-│       ├── Prefabs/Prefabs/Characters/ ← Discipline, Spontaneity prefabs
-│       ├── Art/Animations/        ← Animation assets
-│       ├── Audio/                 ← SFX & Music (chưa có file)
-│       └── Settings/              ← Input Actions config
-├── ARCHITECTURE.md                ← Kiến trúc chi tiết
-├── CONTRIBUTING.md                ← Quy trình làm việc team
-├── CODING_CONVENTIONS.md          ← Chuẩn viết code
-├── FIX_GUIDE.md                   ← Hướng dẫn fix lỗi Unity Editor
-├── GAME_DEVELOPMENT_ROADMAP.md    ← Roadmap & tính năng cần phát triển
-├── .gitignore                     ← Git ignore cho Unity
-└── .gitattributes                 ← Git LFS & Unity YAML merge
-```
-
-> Chi tiết kiến trúc: xem [ARCHITECTURE.md](ARCHITECTURE.md)
-> Quy trình phát triển: xem [CONTRIBUTING.md](CONTRIBUTING.md)
-
----
-
-## Packages sử dụng
-
-| Package | Version | Mục đích |
-|:---|:---|:---|
-| Input System | 1.7.0+ | Xử lý input 2 người chơi |
-| Cinemachine | 2.9.7+ | Camera tracking tự động |
-| TextMeshPro | 3.0.7+ | Render text UI |
-| 2D Animation | 9.2.0 | Sprite animation |
-
----
-
-## Tài liệu liên quan
-
-| File | Nội dung |
-|:---|:---|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Kiến trúc hệ thống, namespaces, class diagram |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Git workflow, branching, quy trình PR |
-| [CODING_CONVENTIONS.md](CODING_CONVENTIONS.md) | Chuẩn đặt tên, tổ chức code |
-| [FIX_GUIDE.md](FIX_GUIDE.md) | Hướng dẫn fix lỗi khi clone về |
-| [GAME_DEVELOPMENT_ROADMAP.md](GAME_DEVELOPMENT_ROADMAP.md) | Roadmap phát triển tính năng |
-
----
-
-## Credits
-
-- **Concept & Design**: Group 8
-- **Programming**: Group 8
-- **Art & Assets**: [Asset Sources]
-- **Audio**: [Audio Sources]
-
-## License
-
-This project is for educational purposes only.
+## 🛠️ Cách Chạy Project
+1. Mở project bằng Unity Hub.
+2. Đảm bảo các Scene đã được thêm vào **Build Settings**.
+3. Mở scene `MainMenuScene` hoặc `Bootstrap` để bắt đầu từ đầu.
+4. Sử dụng phím `WASD` cho Player 1 và các phím mũi tên cho Player 2 (cấu hình trong `InputManager`).
