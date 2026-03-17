@@ -49,9 +49,13 @@ namespace InnerDuel.Characters
         public float airControlMultiplier = 0.8f;
 
         [Header("Combat Stats")]
-        public float attackDamage = 10f; // Base/Default
-        public float attackRange = 1.2f; // Base/Default
-        public float attackCooldown = 0.5f; // Base/Default
+        public float normalAttackDamage = 8f;
+        public float normalAttackRange = 0.8f;
+        public float normalAttackCooldown = 0.35f;
+        
+        public float attackDamage = 10f; // Base/Default (Legacy/Generic)
+        public float attackRange = 1.2f; // Base/Default (Legacy/Generic)
+        public float attackCooldown = 0.5f; // Base/Default (Legacy/Generic)
         public float dashSpeedMultiplier = 3f;
         public float dashDuration = 0.2f;
 
