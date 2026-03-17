@@ -46,13 +46,49 @@ namespace InnerDuel
         
         protected override void Awake()
         {
+            // If another instance exists, copy its scene-specific references before base.Awake() destroys this one.
+            if (_instance != null && _instance != this)
+            {
+                Debug.Log("[GameManager] Transferring references to persistent instance...");
+                _instance.uiManager = this.uiManager;
+                _instance.cameraController = this.cameraController;
+                _instance.mapParent = this.mapParent;
+                _instance.player1 = this.player1;
+                _instance.player2 = this.player2;
+                _instance.fallbackMap = this.fallbackMap;
+            }
+
             base.Awake();
-            // Additional initialization if needed
         }
         
+        private void OnEnable()
+        {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // Ensure InitializeGame() runs on every load of the MainGameScene
+            if (scene.name == GameData.MainGameScene)
+            {
+                Debug.Log($"[GameManager] MainGameScene loaded. Initializing match (Mode: {mode})...");
+                InitializeGame();
+            }
+        }
+
         private void Start()
         {
-            InitializeGame();
+            // If we're already in the MainGameScene on start (e.g. Play from Editor in this scene)
+            // OnSceneLoaded might have already fired, but we ensure it's initialized.
+            if (SceneManager.GetActiveScene().name == GameData.MainGameScene)
+            {
+                InitializeGame();
+            }
         }
         
         private void Update()
@@ -71,9 +107,25 @@ namespace InnerDuel
             }
         }
         
-        private void InitializeGame()
+        public void InitializeGame()
         {
             Debug.Log("[InnerDuel] InitializeGame started.");
+
+            // Reset match state for fresh start or rematch
+            deathSequenceStarted = false;
+            deathAnimationTimer = 0f;
+            stateTimer = 0f;
+            winner = null;
+            currentState = GameState.Intro;
+
+            // Ensure we have current scene references if they were lost during transition
+            if (uiManager == null) uiManager = FindObjectOfType<UIManager>();
+            if (cameraController == null) cameraController = FindObjectOfType<CameraController>();
+            if (mapParent == null)
+            {
+                GameObject mp = GameObject.Find("MapRoot");
+                if (mp != null) mapParent = mp.transform;
+            }
 
             // 1. Spawn Map
             SpawnMap();
@@ -159,6 +211,15 @@ namespace InnerDuel
 
         private void SpawnMap()
         {
+            // Clear existing map if any (safety for rematch logic if scene wasn't reloaded)
+            if (mapParent != null)
+            {
+                foreach (Transform child in mapParent)
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+
             MapData mapToSpawn = GameData.selectedMap != null ? GameData.selectedMap : fallbackMap;
 
             if (mapToSpawn != null && mapToSpawn.mapPrefab != null)
@@ -187,11 +248,11 @@ namespace InnerDuel
         
         private void HandleGameplayState()
         {
-            // Check win condition (handled via OnCharacterDied callback mostly, but safety check here)
+            // Check win condition
             if (!deathSequenceStarted)
             {
                 if (player1 != null && player1.IsDead()) OnCharacterDied(player1);
-                if (player2 != null && player2.IsDead()) OnCharacterDied(player2);
+                else if (player2 != null && player2.IsDead()) OnCharacterDied(player2);
             }
             
             if (deathSequenceStarted)
@@ -226,7 +287,7 @@ namespace InnerDuel
             if (player1 != null) player1.enabled = false;
             if (player2 != null) player2.enabled = false;
             
-            // Initial Positions
+            // Initial Positions (Requirement 11: Set spawn points)
             if (player1 != null) player1.transform.position = new Vector3(-5f, 0f, 0f);
             if (player2 != null) player2.transform.position = new Vector3(5f, 0f, 0f);
         }
