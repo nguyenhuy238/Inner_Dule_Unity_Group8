@@ -1,44 +1,45 @@
 # Lộ Trình Phát Triển (Task Roadmap)
 
-Danh sách các nhiệm vụ cần thực hiện để hoàn thiện dự án Inner Dule.
+Cập nhật ngày 18/03/2026. Phân loại dựa trên audit mã nguồn thực tế.
 
-## 🚨 Critical (Ưu tiên cao - Cần fix ngay)
-1. **Tích hợp CharacterFactory vào GameManager**
-   - **Mô tả**: Thay thế code `Instantiate` trực tiếp trong `GameManager` bằng `CharacterFactory.Instance.CreateCharacter()`.
-   - **Lý do**: Đảm bảo các kỹ năng đặc thù (`UniqueAbilities`) được gán đúng cách cho từng nhân vật.
-   - **Hướng fix**: Sửa hàm `InitializeGame()` trong `GameManager.cs`.
+## 🚨 Nợ Kỹ Thuật (Technical Debt) - Cần Xử Lý Trước
 
-2. **Fix lỗi Ground Check trên các Map mới**
-   - **Mô tả**: Đảm bảo tất cả các prefab bản đồ đều có Layer "Ground" cho các vật thể nền đất.
-   - **Lý do**: Ngăn chặn tình trạng nhân vật không thể nhảy khi đổi bản đồ.
-   - **Hướng fix**: Kiểm tra và cập nhật các Prefab trong `Assets/_Project/Prefabs/Maps`.
+### 1. Tích hợp CharacterFactory (Quan trọng)
+- **Tình trạng**: `CharacterFactory` đã có code nhưng `GameManager` chưa dùng.
+- **Tác vụ**:
+  - Sửa `GameManager.InitializeGame()` để gọi `CharacterFactory.Instance.CreateCharacter()`.
+  - Loại bỏ logic `Instantiate` thủ công trong GameManager.
+  - Điều này giúp tự động gắn các script `UniqueAbility` (như `Ability_DisciplineParry`) vốn đang được logic Factory xử lý.
 
-3. **Cập nhật Input Action cho 2 người chơi**
-   - **Mô tả**: Thiết lập hoàn chỉnh `Input Action Asset` để tách biệt input cho P1 (Keyboard) và P2 (Gamepad hoặc Keyboard khác).
-   - **Lý do**: Tránh xung đột điều khiển giữa hai người chơi.
+### 2. Refactor Hardcoded Combat Logic
+- **Tình trạng**: `InnerCharacterController.PerformAttack` đang chứa logic kiểm tra cứng (`if attackIndex == 3...`).
+- **Tác vụ**: Chuyển logic Leap và Projectile sang các class `BaseCharacterAbility` riêng biệt để Controller gọn nhẹ hơn.
 
-## ✨ Important (Quan trọng - Cải thiện trải nghiệm)
-1. **Hoàn thiện Unique Abilities cho tất cả nhân vật**
-   - **Mô tả**: Triển khai các script kỹ năng cho Logic, Creativity, Stillness, Rage.
-   - **Lý do**: Tạo sự khác biệt thực sự trong lối chơi giữa các nhân vật.
-   - **Hướng fix**: Tạo các class kế thừa từ `BaseCharacterAbility`.
+### 3. Input System Script Execution Order
+- **Tình trạng**: Rủi ro `LateUpdate` của InputManager chạy trước logic của nhân vật, làm mất input.
+- **Tác vụ**: Cấu hình `Script Execution Order` để `InputManager` luôn chạy trước các script khác.
 
-2. **Hệ thống Audio (SFX & BGM)**
-   - **Mô tả**: Gắn âm thanh cho các hành động: Tấn công, Nhảy, Trúng đòn, Dash.
-   - **Lý do**: Tăng tính phản hồi (feedback) và cảm giác lực (impact) khi chiến đấu.
-   - **Hướng fix**: Thêm AudioSource vào Prefab nhân vật và gọi thông qua `AudioManager`.
+---
 
-3. **Refactor GameManager**
-   - **Mô tả**: Tách `GameManager` ra các module nhỏ hơn.
-   - **Lý do**: Giảm sự phức tạp, dễ bảo trì và mở rộng sau này.
+## 🛠 Tính Năng Cần Hoàn Thiện (To-Do)
 
-## 🎯 Nice-to-have (Mở rộng - Thêm tính năng)
-1. **Hệ thống AI đơn giản (CPU Opponent)**
-   - **Mô tả**: Tạo một `AIController` cơ bản có thể tự di chuyển và tấn công.
-   - **Lý do**: Cho phép người chơi luyện tập khi không có bạn chơi cùng.
-2. **Hiệu ứng hình ảnh (VFX) nâng cao**
-   - **Mô tả**: Thêm các hạt (Particles) khi dash, khi va chạm hoặc khi sử dụng kỹ năng đặc biệt.
-   - **Lý do**: Làm cho trò chơi trông chuyên nghiệp và bắt mắt hơn.
-3. **Chế độ Story (Cốt truyện)**
-   - **Mô tả**: Chuỗi các trận đấu với các đoạn thoại dẫn dắt về sự hòa hợp nội tâm.
-   - **Lý do**: Tăng chiều sâu nội dung cho trò chơi.
+### 1. Hệ thống Âm Thanh (Audio Feedback)
+- Thêm SFX cho: Chém trúng, Đỡ đòn thành công, Bước chân.
+- Tích hợp vào Animation Events.
+
+### 2. Visual Effects (VFX)
+- Thêm hiệu ứng hạt khi Dash.
+- Hiệu ứng tóe lửa khi vũ khí va chạm.
+
+### 3. Cân bằng Game (Balancing)
+- Tinh chỉnh thông số trong các file `CharacterData` (hiện tại các số liệu damage/speed đang là placeholder).
+
+---
+
+## ✅ Đã Hoàn Thành (Done)
+
+- [x] Cơ chế di chuyển cơ bản (Move, Jump, Dash).
+- [x] Hệ thống Combat cơ bản (Attack, Block, HP).
+- [x] Luồng game (Menu -> Map Select -> Character Select -> Game -> Result).
+- [x] Hệ thống Data (GameData, MapData, CharacterData).
+- [x] Hỗ trợ 2 người chơi cục bộ (Local Multiplayer).

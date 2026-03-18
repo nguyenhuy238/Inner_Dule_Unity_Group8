@@ -1,217 +1,168 @@
-# Inner Duel - Technical Design Document (TDD)
+# Inner Duel - Tài Liệu Thiết Kế Kỹ Thuật (TDD)
 
-## 1. PROJECT OVERVIEW
+## 1. TỔNG QUAN DỰ ÁN
 
-**Game Name:** Inner Duel  
-**Genre:** 2D Fighting Game  
+**Tên Game:** Inner Duel  
+**Thể loại:** 2D Fighting Game  
 **Engine:** Unity  
-**Language:** C#  
-**Platform:** PC  
+**Ngôn ngữ:** C#  
+**Nền tảng:** PC  
 
-### Concept
-"Inner Duel" is a 2D fighting game where characters represent opposing mental states (e.g., Discipline vs. Spontaneity). The gameplay loop involves selecting a battlefield, choosing characters for two players, and engaging in a high-stakes duel until one player's health is depleted.
+### Ý Tưởng
+"Inner Duel" là một tựa game đối kháng 2D nơi các nhân vật đại diện cho những trạng thái nội tâm đối lập (ví dụ: Kỷ Luật vs Ngẫu Hứng). Vòng lặp gameplay bao gồm việc chọn đấu trường, chọn nhân vật cho hai người chơi, và tham gia vào một trận đấu tay đôi cho đến khi máu của một bên cạn kiệt.
 
-### Gameplay Loop
-1.  **Preparation:** Players select a map and their respective characters.
-2.  **Combat:** Players engage in real-time combat using movement, attacks, blocks, and dashes.
-3.  **Resolution:** The winner is declared in a result screen, with options to rematch or return to character selection.
-
----
-
-## 2. GAME FLOW ARCHITECTURE
-
-The game follows a linear scene transition flow managed by specific UI managers:
-
-1.  **MainMenuScene:** Entry point. Access to settings, credits, and the game start.
-2.  **MapSelectScene:** Players choose the arena for the duel.
-3.  **CharacterSelectScene:** Both Player 1 and Player 2 select their characters.
-4.  **LoadingScene:** Asynchronously loads the gameplay scene while displaying tips.
-5.  **MainGameScene:** The core combat arena where the duel takes place.
-6.  **ResultScene:** Displays the winner and match statistics.
+### Vòng Lặp Gameplay (Gameplay Loop)
+1.  **Chuẩn bị:** Người chơi chọn bản đồ và nhân vật của mình.
+2.  **Chiến đấu:** Người chơi tham gia chiến đấu thời gian thực sử dụng di chuyển, tấn công thường, kỹ năng, đỡ đòn và lướt (dash).
+3.  **Kết thúc:** Người chiến thắng được công bố ở màn hình kết quả, với các tùy chọn đấu lại hoặc quay về menu chọn nhân vật.
 
 ---
 
-## 3. SCENE STRUCTURE
+## 2. KIẾN TRÚC LUỒNG GAME (GAME FLOW)
+
+Trò chơi tuân theo luồng chuyển cảnh tuyến tính được quản lý bởi các Manager cụ thể:
+
+1.  **MainMenuScene:** Điểm bắt đầu. Truy cập cài đặt, thông tin (credits) và bắt đầu game.
+2.  **MapSelectScene:** Người chơi chọn đấu trường (Map).
+3.  **CharacterSelectScene:** Cả Player 1 và Player 2 chọn nhân vật của mình.
+4.  **LoadingScene:** Tải scene gameplay bất đồng bộ trong khi hiển thị mẹo chơi.
+5.  **MainGameScene:** Đấu trường chính nơi diễn ra trận đấu.
+6.  **ResultScene:** Hiển thị người thắng và thống kê trận đấu.
+
+---
+
+## 3. CẤU TRÚC SCENE
 
 ### MainMenuScene
-*   **Purpose:** Initial landing page.
-*   **UI Hierarchy:** Main Menu Panel (Play, Options, Credits, Quit), Options Panel, Credits Panel.
-*   **Main Scripts:** `MainMenuManager.cs`.
-*   **Interactions:** Button clicks to navigate panels or start the map selection.
+*   **Mục đích:** Màn hình chính.
+*   **UI:** Main Menu Panel (Play, Options, Credits, Quit), Options Panel, Credits Panel.
+*   **Script Chính:** `MainMenuManager.cs`.
+*   **Tương tác:** Click chuột để điều hướng hoặc bắt đầu chọn bản đồ.
 
 ### MapSelectScene
-*   **Purpose:** Arena selection.
-*   **UI Hierarchy:** Map Preview Image, Map Name Text, Map Description, Navigation Buttons.
-*   **Main Scripts:** `MapSelectManager.cs`.
-*   **Interactions:** Keyboard (WASD/Arrows) or Buttons to browse maps; Enter/Confirm to save selection to `GameData`.
+*   **Mục đích:** Chọn đấu trường.
+*   **UI:** Hình ảnh xem trước Map, Tên Map, Mô tả, Nút điều hướng.
+*   **Script Chính:** `MapSelectManager.cs`.
+*   **Tương tác:** Sử dụng phím hoặc nút UI để duyệt map; Xác nhận để lưu `selectedMap` vào `GameData`.
 
 ### CharacterSelectScene
-*   **Purpose:** Dual-player character selection.
-*   **UI Hierarchy:** P1 Selection Area, P2 Selection Area, Character Portals/Names, Status Indicators (READY/SELECTING).
-*   **Main Scripts:** `CharacterSelectManager.cs`.
-*   **Interactions:** P1 uses WASD+F; P2 uses Arrows+Enter. Both must confirm to proceed.
+*   **Mục đích:** Chọn nhân vật cho 2 người chơi.
+*   **UI:** Khu vực chọn P1, Khu vực chọn P2, Chân dung nhân vật, Trạng thái (READY/SELECTING).
+*   **Script Chính:** `CharacterSelectManager.cs`.
+*   **Tương tác:** P1 và P2 chọn độc lập. Dữ liệu được lưu vào `GameData.player1Character` và `GameData.player2Character`.
 
 ### LoadingScene
-*   **Purpose:** Seamless transition to gameplay.
-*   **UI Hierarchy:** Progress Bar, Progress Text, Random Tips.
-*   **Main Scripts:** `LoadingSceneManager.cs`.
-*   **Interactions:** Automated transition using `AsyncOperation`.
+*   **Mục đích:** Chuyển cảnh mượt mà.
+*   **UI:** Thanh tiến trình, Text % tải, Mẹo ngẫu nhiên.
+*   **Script Chính:** `LoadingSceneManager.cs`.
+*   **Tương tác:** Tự động chuyển khi tải xong.
 
 ### MainGameScene
-*   **Purpose:** Core gameplay execution.
-*   **UI Hierarchy:** Health Bars, Combo Counters, Timer, Intro/Ending Text.
-*   **Main Scripts:** `GameManager.cs`, `UIManager.cs`, `CameraController.cs`.
-*   **Interactions:** Player movement and combat controls.
+*   **Mục đích:** Gameplay chính.
+*   **UI:** Thanh máu, Tên nhân vật, Thông báo Intro/Ending.
+*   **Script Chính:** `GameManager.cs` (God Object), `UIManager.cs`, `CameraController.cs`.
+*   **Tương tác:** Điều khiển nhân vật chiến đấu.
 
 ### ResultScene
-*   **Purpose:** Match summary.
-*   **UI Hierarchy:** Winner Name, Winner Portrait, Rematch/Menu Buttons.
-*   **Main Scripts:** `ResultScreenManager.cs`.
+*   **Mục đích:** Tổng kết trận đấu.
+*   **UI:** Tên người thắng, Chân dung, Nút Rematch/Menu.
+*   **Script Chính:** `ResultScreenManager.cs`.
 
 ---
 
-## 4. UI SYSTEM
+## 4. HỆ THỐNG UI
 
-The UI system is modular, using dedicated managers for each scene.
+Hệ thống UI được thiết kế theo hướng module, mỗi scene có Manager riêng.
 
-*   **Navigation:** Uses a mix of Mouse-based Button clicks and Keyboard-based navigation (Input System).
-*   **Persistence:** UI managers read from and write to `GameData` to maintain state across scenes.
-*   **Pause Menu:** Implemented via `PauseMenuManager` in the `MainGameScene`. It toggles `Time.timeScale` and provides options to restart or quit.
+*   **Điều hướng:** Sử dụng kết hợp chuột và phím.
+*   **Lưu trữ:** Các UI Manager đọc/ghi dữ liệu vào `GameData` (lớp tĩnh) để duy trì trạng thái giữa các scene.
+*   **Menu Tạm Dừng:** Được xử lý bởi `PauseMenuManager` trong `MainGameScene`, cho phép tạm dừng thời gian (`Time.timeScale = 0`) và khởi động lại trận đấu.
 
 ---
 
-## 5. CHARACTER SYSTEM
+## 5. HỆ THỐNG NHÂN VẬT (CHARACTER SYSTEM)
 
-Characters are implemented using a data-driven approach.
+Nhân vật được triển khai theo hướng Data-Driven (Dữ liệu điều hướng).
 
 ### CharacterData (ScriptableObject)
-Located at `Assets/_Project/Scripts/Character/CharacterType.cs`, this SO defines:
-*   **Identity:** `CharacterType` enum, Name, Description.
-*   **Stats:** Max Health, Move Speed, Defense, Jump Force.
-*   **Combat:** Attack Damage, Ranges, Cooldowns, Dash Multipliers.
-*   **Visuals:** Main Color, Effect Color.
-*   **Flags:** `canBlock`, `canDash`, `canCounterAttack`, etc.
+Nằm tại `Assets/_Project/Scripts/Character/CharacterData.cs` (định nghĩa) và `Assets/_Project/Data/` (dữ liệu). Chứa:
+*   **Định danh:** `CharacterType` enum, Tên, Mô tả.
+*   **Chỉ số:** Máu tối đa, Tốc độ, Lực nhảy.
+*   **Chiến đấu:** Sát thương (Normal, Skill 1-3), Tầm đánh, Thời gian hồi chiêu.
+*   **Cờ (Flags):** `canBlock`, `canDash`, `canCounterAttack`...
+*   **Visuals:** Sprite mặc định, Animator Controller, Màu sắc.
 
-### Character Prefabs
-Located at `Assets/_Project/Prefabs/Prefabs/Characters/`.
-Each prefab contains:
-*   `InnerCharacterController`: Handles movement and combat logic.
-*   `Animator`: For character-specific animations.
-*   `CharacterData`: A reference to its specific SO.
+### InnerCharacterController (Logic)
+Script trung tâm điều khiển nhân vật:
+*   **Input:** Nhận input từ `InputManager` dựa trên `playerID`.
+*   **Movement:** Xử lý di chuyển vật lý, nhảy (Ground Check), và Dash.
+*   **Combat:** Xử lý tấn công thường và 3 kỹ năng (Attack 1, 2, 3).
+*   **State:** Quản lý máu, trạng thái chết, trạng thái bất tử (i-frames).
+*   **Ability:** Tích hợp hệ thống `BaseCharacterAbility` để mở rộng kỹ năng.
 
-### Selection & Spawning
-*   `CharacterSelectManager` saves the selected SOs to `GameData.player1Character` and `GameData.player2Character`.
-*   `GameManager` assigns these SOs to the `InnerCharacterController` instances in the `MainGameScene` and calls `InitializeFromData()`.
+### Quy Trình Khởi Tạo (Hiện Tại)
+1.  `GameManager` đọc `GameData.player1Character` và `GameData.player2Character`.
+2.  `GameManager` trực tiếp gọi `Instantiate` prefab được khai báo trong `CharacterData`.
+3.  `GameManager` gán `playerID` và gọi `InitializeFromData()` trên controller mới tạo.
+    *   *Lưu ý:* `CharacterFactory` đã được cài đặt nhưng chưa được `GameManager` sử dụng trong phiên bản hiện tại.
 
 ---
 
-## 6. MAP SYSTEM
+## 6. HỆ THỐNG BẢN ĐỒ (MAP SYSTEM)
 
 ### MapData (ScriptableObject)
-Located at `Assets/_Project/Scripts/Core/MapData.cs`.
-*   Fields: `mapName`, `previewImage`, `mapPrefab`, `description`.
+*   Chứa: `mapName`, `previewImage`, `mapPrefab`, `description`.
 
 ### Map Loading
-*   `MapSelectManager` populates a list of `availableMaps` and saves the selection to `GameData.selectedMap`.
-*   In `MainGameScene`, `GameManager.SpawnMap()` instantiates the prefab stored in `GameData.selectedMap.mapPrefab`.
+*   Trong `MainGameScene`, `GameManager` kiểm tra `GameData.selectedMap`.
+*   Nếu có, nó sẽ `Instantiate` prefab bản đồ vào scene tại vị trí `Vector3.zero`.
+*   Nếu không, nó sử dụng `fallbackMap`.
 
 ---
 
-## 7. GAME DATA MANAGEMENT
+## 7. QUẢN LÝ DỮ LIỆU (DATA MANAGEMENT)
 
 ### GameData (Static Class)
-Located at `Assets/_Project/Scripts/Core/GameData.cs`.
-This static class acts as the "Blackboard" for the game:
-*   **Character Selection:** `player1Character`, `player2Character`.
-*   **Map Selection:** `selectedMap`.
-*   **Match Results:** `winnerPlayerID`, `winnerName`.
-*   **Scene Constants:** Strings for scene names to prevent typos.
-
-Why use Static Data? It provides a simple, high-performance way to pass information between independent scenes without requiring complex singleton persistence (DDOL) for every data point.
+Nằm tại `Assets/_Project/Scripts/Core/GameData.cs`.
+Đóng vai trò "Blackboard" toàn cục:
+*   **Input:** Chứa thông tin nhân vật (`CharacterData`) đã chọn.
+*   **Map:** Chứa `MapData` đã chọn.
+*   **Kết quả:** Lưu `winnerPlayerID` và `winnerName`.
+*   **Constants:** Lưu tên các Scene để tránh hardcode string rải rác.
 
 ---
 
-## 8. GAMEPLAY INITIALIZATION
+## 8. QUY TRÌNH KHỞI TẠO GAMEPLAY
 
-Inside `MainGameScene`, the `GameManager.InitializeGame()` method follows these steps:
-1.  **Spawn Map:** Instantiates the selected map prefab.
-2.  **Setup Players:** Recovers player controllers from the scene or assigns IDs to pre-placed prefabs.
-3.  **Apply Data:** Injects `CharacterData` from `GameData` into the controllers.
-4.  **Link Camera:** Sets the camera targets to follow both players.
-5.  **Initialize UI:** Sets up health bars and names via `UIManager`.
-6.  **Start Intro:** Triggers the intro state (movement locked, countdown text).
-
----
-
-## 9. SCRIPT ARCHITECTURE
-
-| Script | Responsibility | Key Methods |
-| :--- | :--- | :--- |
-| `GameData` | Global state storage. | `ResetData()` |
-| `MainMenuManager` | Navigation for the start screen. | `PlayGame()`, `QuitGame()` |
-| `MapSelectManager` | Arena browsing and selection. | `ConfirmSelection()`, `ChangeSelection()` |
-| `CharacterSelectManager` | Dual-player character selection logic. | `ConfirmSelection()`, `StartGame()` |
-| `LoadingSceneManager` | Async loading with visual progress. | `LoadSceneAsync()` |
-| `GameManager` | Main game loop and state machine. | `InitializeGame()`, `OnCharacterDied()` |
-| `InnerCharacterController`| Character movement, physics, and combat. | `InitializeFromData()`, `TakeDamage()` |
-| `PauseMenuManager` | Handles pausing and mid-game options. | `Pause()`, `Resume()`, `RestartMatch()` |
-| `ResultScreenManager` | Displays post-match summary. | `Rematch()`, `MainMenu()` |
+Trong `MainGameScene`, `GameManager.InitializeGame()` thực hiện:
+1.  **Spawn Map:** Tạo prefab bản đồ.
+2.  **Spawn Player:**
+    *   Tìm các placeholder player có sẵn trong scene (nếu có).
+    *   Hoặc Instantiate prefab mới từ `GameData` tại vị trí của placeholder.
+3.  **Setup Logic:**
+    *   Gán Layer (Player1/Player2).
+    *   Gán Opponent Layer mask.
+    *   Khởi tạo chỉ số từ `CharacterData`.
+4.  **Setup Camera:** Gán 2 transform của player vào `CameraController` (Cinemachine Target Group).
+5.  **Setup UI:** Gán references player vào `UIManager` để hiển thị thanh máu.
+6.  **Start Intro:** Bắt đầu đếm ngược, khóa di chuyển.
 
 ---
 
-## 10. PROJECT FOLDER STRUCTURE
+## 9. KIẾN TRÚC SCRIPT
 
-The project follows a standard Unity organization pattern:
-
-```text
-Assets/_Project
-├ Art                 # Sprites, Animations, Visual Assets
-├ Audio               # Sound Effects and Music
-├ Data                # ScriptableObject instances (.asset)
-├ Prefabs             # Player, Map, and UI Prefabs
-├ Scenes              # .unity files for all game states
-├ Scripts             # C# Logic
-│  ├ Camera           # Camera control
-│  ├ Character        # Combat, Controller, Factory
-│  ├ Core             # Global data, Input, Utilities
-│  ├ Effects          # Particles and visual feedback
-│  ├ Game             # Main managers (GameManager)
-│  └ UI               # Menu and HUD managers
-└ Settings            # Input Actions and project configs
-```
-
-**Reasoning:** This structure isolates game-specific code and assets from 3rd-party plugins, ensuring a clean workspace for multiple developers.
+| Script | Trách nhiệm chính |
+| :--- | :--- |
+| `GameData` | Lưu trữ trạng thái toàn cục (Static). |
+| `MainMenuManager` | Xử lý UI và điều hướng ở Menu chính. |
+| `InputManager` | Wrapper cho Unity Input System, xử lý input cho 2 người chơi. |
+| `GameManager` | Quản lý vòng lặp game, Spawn Map/Player, Win/Loss condition. |
+| `InnerCharacterController` | Điều khiển vật lý, animation và combat của nhân vật. |
+| `CharacterFactory` | (Chưa dùng) Tiện ích để tạo nhân vật và gắn abilities động. |
+| `BaseCharacterAbility` | Lớp cơ sở cho các kỹ năng rời rạc (Dash, Parry...). |
+| `UIManager` | Hiển thị HUD (Máu, Tên) trong gameplay. |
 
 ---
 
-## 11. TEAM DEVELOPMENT WORKFLOW
-
-### Character Development
-1.  **Logic:** Modify `CharacterData.cs` to add new flags or stats.
-2.  **Creation:** Create a new `CharacterData` asset in `Assets/_Project/Data`.
-3.  **Prefab:** Clone a base character prefab, link the new `CharacterData`, and adjust the `Animator`.
-4.  **Integration:** Add the new `CharacterData` to the `availableCharacters` list in the `CharacterSelectManager`.
-
-### Map Development
-1.  **Design:** Create an arena prefab.
-2.  **Data:** Create a `MapData` asset and link the prefab.
-3.  **Integration:** Add to `availableMaps` in `MapSelectManager`.
-
-### Git Workflow
-*   **Scene Separation:** Use separate scenes for menus and gameplay to minimize merge conflicts.
-*   **Prefab-Based:** UI and Characters are prefabs, allowing team members to work on them without touching the main scene files.
-
----
-
-## 12. FUTURE EXTENSIONS
-
-1.  **Online Mode:** Implement Mirror or Photon for remote multiplayer.
-2.  **Animation Preview:** Show character animations/moves in the `CharacterSelectScene`.
-3.  **Expanded Roster:** Implementation of more mental states (e.g., Logic vs. Creativity).
-4.  **Advanced Map Features:** Hazards (traps, platforms) based on the map's theme.
-5.  **Input Customization:** Allow players to rebind controls via the Options panel.
-
----
-
-*Document generated on March 16, 2026.*  
-*Reflects Project Version: 1.0.0 (Internal Build)*
+*Tài liệu được cập nhật ngày 18/03/2026.*
+*Phản ánh đúng mã nguồn phiên bản hiện tại.*
