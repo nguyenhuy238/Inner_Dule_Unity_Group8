@@ -133,13 +133,7 @@ namespace InnerDuel.Characters
             // Initialize Input Manager
             inputManager = InputManager.InstanceSafe();
             
-            // Warning for missing ground layer
-            if (groundLayer == 0)
-            {
-                Debug.LogError($"[InnerDuel] {gameObject.name} has no groundLayer set! Jump will NOT work. Please set it in the Inspector.");
-            }
-
-            // Initialize HealthBar
+            // Warning for missing ground layer removed per user request
             if (healthBar != null)
             {
                 healthBar.SetMaxHealth(currentHealth);
@@ -160,7 +154,15 @@ namespace InnerDuel.Characters
             {
                 var go = new GameObject("GroundCheck");
                 go.transform.SetParent(transform);
-                go.transform.localPosition = new Vector3(0f, -0.6f, 0f);
+                
+                float bottomY = -0.6f;
+                BoxCollider2D boxCol = GetComponent<BoxCollider2D>();
+                if (boxCol != null)
+                {
+                    bottomY = boxCol.offset.y - (boxCol.size.y / 2f);
+                }
+                
+                go.transform.localPosition = new Vector3(0f, bottomY, 0f);
                 groundCheck = go.transform;
             }
 
@@ -343,6 +345,15 @@ namespace InnerDuel.Characters
                 }
             }
 
+            // Fallback for character scaling/collider offsets that might prevent the overlap circle from hitting
+            if (!isGrounded && rb != null)
+            {
+                if (Mathf.Abs(rb.velocity.y) < 0.001f)
+                {
+                    isGrounded = true;
+                }
+            }
+
             if (isGrounded && !wasGrounded)
             {
                 Debug.Log($"[InnerDuel] Player {playerID} Landed.");
@@ -472,7 +483,11 @@ namespace InnerDuel.Characters
             StartCoroutine(ResetAttackState(recoveryTime));
             
             // Notify abilities
-            foreach (var ability in abilities) ability.OnAttack();
+            foreach (var ability in abilities)
+            {
+                ability.OnAttack();
+                ability.OnNormalAttack();
+            }
         }
 
         private void PerformAttack(int attackIndex)
@@ -555,6 +570,12 @@ namespace InnerDuel.Characters
             // Simple logic: If prefab exists and it's Attack 1 or 3 (classic shoto/zoning).
             bool isProjectile = (characterData != null && characterData.projectilePrefab != null && (attackIndex == 1 || attackIndex == 3));
             
+            // Logic Archer handles all projectiles directly in Ability_LogicArcher
+            if (characterData != null && characterData.type == CharacterType.Logic)
+            {
+                isProjectile = false;
+            }
+
             if (isProjectile)
             {
                 StartCoroutine(SpawnProjectileRoutine(0.2f, damage));
@@ -588,33 +609,35 @@ namespace InnerDuel.Characters
             }
         }
 
-        private IEnumerator SpawnProjectileRoutine(float delay, float damage)
+        // arrowCount mặc định là 1, overridePrefab mặc định là null để tương thích với code cũ
+        public IEnumerator SpawnProjectileRoutine(float delay, float damage, int arrowCount = 1, GameObject overridePrefab = null)
         {
             yield return new WaitForSeconds(delay);
-            
-            if (characterData != null && characterData.projectilePrefab != null)
+
+            // Logic chọn Prefab an toàn
+            GameObject prefabToSpawn = overridePrefab != null ? overridePrefab : characterData.projectilePrefab;
+            if (prefabToSpawn == null) yield break;
+
+            float dirX = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
+
+            for (int i = 0; i < arrowCount; i++)
             {
-                GameObject projObj = Instantiate(characterData.projectilePrefab, projectileSpawnPoint.position, Quaternion.identity);
-                
-                // Setup Projectile Component
+                GameObject projObj = Instantiate(prefabToSpawn, projectileSpawnPoint.position, Quaternion.identity);
                 var coreProj = projObj.GetComponent<InnerDuel.Core.Projectile>();
+
                 if (coreProj != null)
                 {
-                    // Direction
-                    float dirX = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
-                    Vector2 dir = new Vector2(dirX, 0);
-                    coreProj.Initialize(dir, playerID, damage, opponentLayer);
-                }
-                else
-                {
-                    // Legacy/Effects projectile fallback
-                    // Just set velocity if it has RB
-                    var rbProj = projObj.GetComponent<Rigidbody2D>();
-                    if (rbProj != null)
+                    Vector2 direction = new Vector2(dirX, 0);
+
+                    // Nếu bắn nhiều mũi tên (Skill 2), tính toán góc xòe hình quạt
+                    if (arrowCount > 1)
                     {
-                         float dirX = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
-                         rbProj.velocity = new Vector2(dirX * 15f, 0f);
+                        // Công cụ tính toán góc: Mũi tên giữa thẳng, các mũi tên bên lệch 15 độ
+                        float angle = (i - (arrowCount - 1) / 2f) * 15f;
+                        direction = Quaternion.Euler(0, 0, angle) * direction;
                     }
+
+                    coreProj.Initialize(direction, playerID, damage, opponentLayer);
                 }
             }
         }

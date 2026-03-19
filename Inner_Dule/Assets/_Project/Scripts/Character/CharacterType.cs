@@ -73,8 +73,10 @@ namespace InnerDuel.Characters
         public float attack3Cooldown = 1.5f;
         
         [Header("Special Attack Properties")]
-        public GameObject projectilePrefab; // For ranged attacks (e.g. Player 2 Fireball)
-        public float projectileSpeed = 10f;
+        public GameObject projectilePrefab; // Dùng cho cả nhân vật cũ và Mũi tên thường/Skill2 của Logic
+        public GameObject arrowSkill1Prefab; // Cho nhân vật Logic (S1)
+        public GameObject arrowSkill3Prefab; // Cho nhân vật Logic (S3)
+        public float projectileSpeed = 15f;
         public Vector2 attack3LeapForce = new Vector2(5f, 5f); // For leap attacks
         public float attack3ControlLock = 0.2f;
 
