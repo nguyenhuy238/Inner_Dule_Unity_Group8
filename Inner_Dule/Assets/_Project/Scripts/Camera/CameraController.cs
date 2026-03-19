@@ -24,6 +24,10 @@ namespace InnerDuel.Camera
         public float zoomMultiplier = 0.5f;
         [Tooltip("How smoothly the camera zooms (lower value = faster).")]
         public float zoomSmoothTime = 0.1f;
+        [Tooltip("Extra zoom-out applied when players are very close to avoid overly tight framing.")]
+        public float closeRangeZoomPadding = 1.25f;
+        [Tooltip("Horizontal distance where close-range padding fades out to zero.")]
+        public float closeRangeDistance = 3f;
 
         [Header("Framing Settings")]
         [Tooltip("Damping for camera movement. Adjust in Cinemachine Framing Transposer for more control.")]
@@ -34,6 +38,12 @@ namespace InnerDuel.Camera
         public bool enableCameraBound = true;
         [Tooltip("The collider used to define the camera's boundaries (must be PolygonCollider2D or CompositeCollider2D).")]
         public Collider2D confinerCollider;
+        [Tooltip("Auto-detect map bounds from SpriteRenderers under MapRoot when confinerCollider is not assigned.")]
+        public bool autoDetectMapBounds = true;
+        [Tooltip("Name of the map root object used for auto bounds detection.")]
+        public string mapRootName = "MapRoot";
+        [Tooltip("Inset used for auto bounds to avoid showing map edges.")]
+        public float mapBoundsInset = 0.1f;
 
         [Header("Ending Sequence")]
         public float endingZoomDuration = 2f;
@@ -45,6 +55,12 @@ namespace InnerDuel.Camera
         private float endingTimer = 0f;
         private float currentZoomVelocity;
         private float initialOrthographicSize;
+        private CinemachineBrain mainBrain;
+        private UnityEngine.Camera mainCamera;
+        private PolygonCollider2D runtimeAutoConfinerCollider;
+        private Bounds detectedMapBounds;
+        private bool hasDetectedMapBounds;
+        private int cachedMapRootChildCount = -1;
 
         private void Start()
         {
@@ -53,6 +69,9 @@ namespace InnerDuel.Camera
 
         private void LateUpdate()
         {
+            TryBuildAutoMapBounds();
+            RefreshLiveVirtualCamera();
+
             if (isEndingSequence)
             {
                 HandleEndingSequence();
@@ -65,10 +84,44 @@ namespace InnerDuel.Camera
 
         private void SetupCamera()
         {
+            // Ensure CinemachineBrain exists on Main Camera and cache it.
+            mainCamera = UnityEngine.Camera.main;
+            if (mainCamera != null)
+            {
+                mainBrain = mainCamera.GetComponent<CinemachineBrain>();
+                if (mainBrain == null)
+                {
+                    mainBrain = mainCamera.gameObject.AddComponent<CinemachineBrain>();
+                }
+            }
+
             if (virtualCamera == null)
             {
-                virtualCamera = GetComponentInChildren<CinemachineVirtualCamera>();
-                if (virtualCamera == null) virtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
+                // Prefer the currently live camera from CinemachineBrain to avoid controlling the wrong vcam.
+                TryAssignVirtualCameraFromBrain();
+
+                if (virtualCamera == null)
+                {
+                    virtualCamera = GetComponentInChildren<CinemachineVirtualCamera>();
+                }
+
+                if (virtualCamera == null)
+                {
+                    var allVirtualCameras = FindObjectsOfType<CinemachineVirtualCamera>();
+                    for (int i = 0; i < allVirtualCameras.Length; i++)
+                    {
+                        if (allVirtualCameras[i].name == "FightCamera")
+                        {
+                            virtualCamera = allVirtualCameras[i];
+                            break;
+                        }
+                    }
+
+                    if (virtualCamera == null && allVirtualCameras.Length > 0)
+                    {
+                        virtualCamera = allVirtualCameras[0];
+                    }
+                }
             }
 
             if (targetGroup == null)
@@ -77,14 +130,40 @@ namespace InnerDuel.Camera
                 if (targetGroup == null) targetGroup = FindObjectOfType<CinemachineTargetGroup>();
             }
 
-            // Ensure CinemachineBrain exists on Main Camera
-            var mainCamera = UnityEngine.Camera.main;
-            if (mainCamera != null && mainCamera.GetComponent<CinemachineBrain>() == null)
-            {
-                mainCamera.gameObject.AddComponent<CinemachineBrain>();
-            }
-
+            TryBuildAutoMapBounds();
             ConfigureCinemachineComponents();
+        }
+
+        private void RefreshLiveVirtualCamera()
+        {
+            if (mainBrain == null) return;
+            if (mainBrain.ActiveVirtualCamera == null) return;
+
+            var liveVirtualCamera = mainBrain.ActiveVirtualCamera.VirtualCameraGameObject != null
+                ? mainBrain.ActiveVirtualCamera.VirtualCameraGameObject.GetComponent<CinemachineVirtualCamera>()
+                : null;
+
+            if (liveVirtualCamera != null && liveVirtualCamera != virtualCamera)
+            {
+                virtualCamera = liveVirtualCamera;
+                currentZoomVelocity = 0f;
+                ConfigureCinemachineComponents();
+            }
+        }
+
+        private void TryAssignVirtualCameraFromBrain()
+        {
+            if (mainBrain == null) return;
+            if (mainBrain.ActiveVirtualCamera == null) return;
+
+            var activeCameraObject = mainBrain.ActiveVirtualCamera.VirtualCameraGameObject;
+            if (activeCameraObject == null) return;
+
+            var activeVirtualCamera = activeCameraObject.GetComponent<CinemachineVirtualCamera>();
+            if (activeVirtualCamera != null)
+            {
+                virtualCamera = activeVirtualCamera;
+            }
         }
 
         private void ConfigureCinemachineComponents()
@@ -117,16 +196,103 @@ namespace InnerDuel.Camera
             framing.m_GroupFramingMode = CinemachineFramingTransposer.FramingMode.None;
 
             // Configure Confiner
-            if (enableCameraBound && confinerCollider != null)
+            Collider2D activeConfinerCollider = confinerCollider != null ? confinerCollider : runtimeAutoConfinerCollider;
+            if (enableCameraBound && activeConfinerCollider != null)
             {
                 var confiner = virtualCamera.GetComponent<CinemachineConfiner>();
                 if (confiner == null) confiner = virtualCamera.gameObject.AddComponent<CinemachineConfiner>();
                 
-                confiner.m_BoundingShape2D = confinerCollider;
+                confiner.m_BoundingShape2D = activeConfinerCollider;
                 confiner.m_ConfineMode = CinemachineConfiner.Mode.Confine2D;
                 confiner.m_Damping = 0f;
                 confiner.InvalidatePathCache();
             }
+        }
+
+        private void TryBuildAutoMapBounds()
+        {
+            if (!autoDetectMapBounds || confinerCollider != null) return;
+
+            GameObject mapRoot = GameObject.Find(mapRootName);
+            if (mapRoot == null) return;
+
+            int currentMapRootChildCount = mapRoot.transform.childCount;
+            if (hasDetectedMapBounds && runtimeAutoConfinerCollider != null && currentMapRootChildCount == cachedMapRootChildCount)
+            {
+                return;
+            }
+
+            SpriteRenderer[] mapRenderers = mapRoot.GetComponentsInChildren<SpriteRenderer>(true);
+            if (mapRenderers == null || mapRenderers.Length == 0) return;
+
+            bool hasBounds = false;
+            Bounds combinedBounds = new Bounds();
+
+            for (int i = 0; i < mapRenderers.Length; i++)
+            {
+                SpriteRenderer renderer = mapRenderers[i];
+                if (renderer == null || renderer.sprite == null || !renderer.enabled) continue;
+
+                if (!hasBounds)
+                {
+                    combinedBounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    combinedBounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            if (!hasBounds) return;
+
+            detectedMapBounds = combinedBounds;
+            hasDetectedMapBounds = true;
+            cachedMapRootChildCount = currentMapRootChildCount;
+
+            if (runtimeAutoConfinerCollider == null)
+            {
+                GameObject autoConfiner = new GameObject("AutoCameraConfiner");
+                autoConfiner.transform.SetParent(mapRoot.transform, false);
+                runtimeAutoConfinerCollider = autoConfiner.AddComponent<PolygonCollider2D>();
+                runtimeAutoConfinerCollider.isTrigger = true;
+            }
+
+            Vector3 confinerSize3 = combinedBounds.size - (Vector3.one * Mathf.Max(0f, mapBoundsInset * 2f));
+            Vector2 confinerSize = new Vector2(
+                Mathf.Max(0.1f, confinerSize3.x),
+                Mathf.Max(0.1f, confinerSize3.y)
+            );
+
+            Vector3 localCenter = mapRoot.transform.InverseTransformPoint(combinedBounds.center);
+            float halfWidth = confinerSize.x * 0.5f;
+            float halfHeight = confinerSize.y * 0.5f;
+            Vector2[] points = new Vector2[]
+            {
+                new Vector2(localCenter.x - halfWidth, localCenter.y - halfHeight),
+                new Vector2(localCenter.x - halfWidth, localCenter.y + halfHeight),
+                new Vector2(localCenter.x + halfWidth, localCenter.y + halfHeight),
+                new Vector2(localCenter.x + halfWidth, localCenter.y - halfHeight),
+            };
+            runtimeAutoConfinerCollider.pathCount = 1;
+            runtimeAutoConfinerCollider.SetPath(0, points);
+
+            ConfigureCinemachineComponents();
+        }
+
+        private float GetMapSafeMaxZoom()
+        {
+            if (!hasDetectedMapBounds) return float.PositiveInfinity;
+
+            float aspect = mainCamera != null
+                ? mainCamera.aspect
+                : (float)Screen.width / Mathf.Max(1f, Screen.height);
+
+            float heightLimit = detectedMapBounds.extents.y;
+            float widthLimit = detectedMapBounds.extents.x / Mathf.Max(0.01f, aspect);
+            float safeLimit = Mathf.Min(heightLimit, widthLimit) - Mathf.Max(0f, mapBoundsInset);
+
+            return Mathf.Max(0.1f, safeLimit);
         }
 
         public void SetTargets(Transform p1, Transform p2)
@@ -153,9 +319,28 @@ namespace InnerDuel.Camera
             // Requirement 2 & 9: Horizontal distance only
             float distance = Mathf.Abs(player1.position.x - player2.position.x);
 
+            // Add extra padding at close range so the camera does not zoom too tightly.
+            float closeRangeFactor = 1f - Mathf.Clamp01(distance / Mathf.Max(0.01f, closeRangeDistance));
+            float closeRangePadding = closeRangeFactor * closeRangeZoomPadding;
+
             // Requirement 2 & 3 & 4: Calculate target zoom
-            float targetSize = minZoom + (distance * zoomMultiplier);
-            targetSize = Mathf.Clamp(targetSize, minZoom, maxZoom);
+            float targetSize = minZoom + closeRangePadding + (distance * zoomMultiplier);
+
+            float effectiveMinZoom = minZoom;
+            float effectiveMaxZoom = maxZoom;
+
+            float mapSafeMaxZoom = GetMapSafeMaxZoom();
+            if (!float.IsInfinity(mapSafeMaxZoom))
+            {
+                effectiveMaxZoom = Mathf.Min(effectiveMaxZoom, mapSafeMaxZoom);
+            }
+
+            if (effectiveMinZoom > effectiveMaxZoom)
+            {
+                effectiveMinZoom = effectiveMaxZoom;
+            }
+
+            targetSize = Mathf.Clamp(targetSize, effectiveMinZoom, effectiveMaxZoom);
 
             // Requirement 8: Smooth zoom
             virtualCamera.m_Lens.OrthographicSize = Mathf.SmoothDamp(

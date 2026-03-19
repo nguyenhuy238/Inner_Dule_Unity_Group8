@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mapName: Forest Arena
   previewImage: {fileID: 21300000, guid: bb58350735ac37a45aba65cf03988285, type: 3}
-  mapPrefab: {fileID: 8353731065542111707, guid: 086eebd34769d9e49b1d21b6d97a2ba2, type: 3}
+  mapPrefab: {fileID: 8300866985630406376, guid: a38d0179fb0d03b4f97f744ade9b0d98, type: 3}
   description: Deep forest battlegrounds
