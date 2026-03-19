@@ -9,8 +9,8 @@ namespace InnerDuel.Characters
         public GameObject spontaneityPrefab;
         public GameObject logicPrefab;
         public GameObject creativityPrefab;
-        public GameObject stillnessPrefab;
-        public GameObject ragePrefab;
+        public GameObject stillnessPrefab; // now Reason
+        public GameObject ragePrefab;      // now Emotion
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -126,7 +126,8 @@ namespace InnerDuel.Characters
                     characterObj.AddComponent<Ability_SpontaneityDash>(); // Giữ nguyên
                     break;
                 case CharacterType.Logic:
-                    characterObj.AddComponent<Ability_LogicArcher>(); // Thêm mới cho Logic
+                case CharacterType.Reason:
+                    characterObj.AddComponent<Ability_LogicArcher>(); // Thêm mới cho Logic/Reason
                     break;
             }
         }
@@ -141,8 +142,8 @@ namespace InnerDuel.Characters
                 case CharacterType.Spontaneity: selectedPrefab = spontaneityPrefab; break;
                 case CharacterType.Logic: selectedPrefab = logicPrefab; break;
                 case CharacterType.Creativity: selectedPrefab = creativityPrefab; break;
-                case CharacterType.Stillness: selectedPrefab = stillnessPrefab; break;
-                case CharacterType.Rage: selectedPrefab = ragePrefab; break;
+                case CharacterType.Reason: selectedPrefab = stillnessPrefab; break;
+                case CharacterType.Emotion: selectedPrefab = ragePrefab; break;
             }
             
             if (selectedPrefab == null)
@@ -244,6 +245,40 @@ namespace InnerDuel.Characters
                     data.mainColor = Color.white;
                     data.effectColor = Color.cyan;
                     data.canDash = true;
+                    break;
+                
+                case CharacterType.Reason:
+                    data.characterName = "Reason (Cung thủ) [Fallback]";
+                    data.maxHealth = 110f;
+                    data.moveSpeed = 6.5f;
+                    data.defense = 4f;
+                    data.jumpForce = 13f;
+                    data.airControlMultiplier = 0.85f;
+                    data.normalAttackDamage = 8f;
+                    data.attack1Damage = 12f;
+                    data.attack2Damage = 10f; // Mỗi mũi tên trong chùm 3
+                    data.attack3Damage = 25f;
+                    data.mainColor = new Color(0.4f, 1f, 0.4f); // Greenish
+                    data.effectColor = Color.green;
+                    data.canDash = true;
+                    break;
+
+                case CharacterType.Emotion:
+                    data.characterName = "Emotion (Kỵ sĩ cầm rìu) [Fallback]";
+                    data.maxHealth = 180f;
+                    data.moveSpeed = 4.5f;
+                    data.defense = 12f;
+                    data.jumpForce = 11f;
+                    data.airControlMultiplier = 0.4f;
+                    data.normalAttackDamage = 15f;
+                    data.attack1Damage = 20f;
+                    data.attack2Damage = 25f;
+                    data.attack3Damage = 35f;
+                    data.mainColor = new Color(1f, 0.4f, 0.4f); // Reddish
+                    data.effectColor = Color.red;
+                    data.canBlock = true;
+                    data.hasBerserkMode = true;
+                    data.attack3LeapForce = new Vector2(6f, 4f);
                     break;
                 
                 default:

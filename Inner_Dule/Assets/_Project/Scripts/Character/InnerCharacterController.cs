@@ -276,14 +276,11 @@ namespace InnerDuel.Characters
             bool jumpRequested = inputManager.GetButtonDown(playerID, "Jump");
             if (jumpRequested)
             {
-                if (isGrounded && canMove && !isAttacking && !isBlocking)
+                // Removed isGrounded check for "infinite jumping" per user request
+                if (canMove && !isAttacking && !isBlocking)
                 {
                     jumpQueued = true;
-                    Debug.Log($"[InnerDuel] Player {playerID} Jump Queued!");
-                }
-                else
-                {
-                    Debug.Log($"[InnerDuel] Player {playerID} Jump Denied. Grounded: {isGrounded}, CanMove: {canMove}, Attacking: {isAttacking}, Blocking: {isBlocking}");
+                    Debug.Log($"[InnerDuel] Player {playerID} Jump Queued (Infinite)!");
                 }
             }
 
@@ -375,7 +372,7 @@ namespace InnerDuel.Characters
                 jumpQueued = false;
                 isGrounded = false;
                 
-                if (animator != null) animator.SetBool(animIsGrounded, false);
+                if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsGrounded, false);
                 Debug.Log($"[InnerDuel] Player {playerID} Jump Executed!");
             }
 
@@ -469,7 +466,7 @@ namespace InnerDuel.Characters
             normalAttackCooldown = cooldown;
 
             // Animation
-            if (animator != null)
+            if (animator != null && animator.runtimeAnimatorController != null)
             {
                 animator.SetTrigger(animNormalAttack);
                 animator.SetBool(animIsAttacking, true);
@@ -540,7 +537,7 @@ namespace InnerDuel.Characters
             }
 
             // Animation
-            if (animator != null)
+            if (animator != null && animator.runtimeAnimatorController != null)
             {
                 animator.SetTrigger(triggerName);
                 animator.SetBool(animIsAttacking, true);
@@ -571,7 +568,7 @@ namespace InnerDuel.Characters
             bool isProjectile = (characterData != null && characterData.projectilePrefab != null && (attackIndex == 1 || attackIndex == 3));
             
             // Logic Archer handles all projectiles directly in Ability_LogicArcher
-            if (characterData != null && characterData.type == CharacterType.Logic)
+            if (characterData != null && (characterData.type == CharacterType.Logic || characterData.type == CharacterType.Reason))
             {
                 isProjectile = false;
             }
@@ -609,35 +606,47 @@ namespace InnerDuel.Characters
             }
         }
 
-        // arrowCount mặc định là 1, overridePrefab mặc định là null để tương thích với code cũ
         public IEnumerator SpawnProjectileRoutine(float delay, float damage, int arrowCount = 1, GameObject overridePrefab = null)
         {
             yield return new WaitForSeconds(delay);
 
-            // Logic chọn Prefab an toàn
             GameObject prefabToSpawn = overridePrefab != null ? overridePrefab : characterData.projectilePrefab;
-            if (prefabToSpawn == null) yield break;
+            if (prefabToSpawn == null)
+            {
+                Debug.LogWarning($"[InnerDuel] No projectile prefab found for {characterData.type}. Skipping spawn.");
+                yield break;
+            }
 
             float dirX = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
+            Debug.Log($"[InnerDuel] Spawning {arrowCount} projectiles for {characterData.type} (Facing: {(dirX > 0 ? "Right" : "Left")})");
 
             for (int i = 0; i < arrowCount; i++)
             {
-                GameObject projObj = Instantiate(prefabToSpawn, projectileSpawnPoint.position, Quaternion.identity);
+                Vector2 spawnPos = projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;
+                Vector2 direction = new Vector2(dirX, 0);
+
+                // Calculate spread angle for multi-shot (Skill 2)
+                float angle = 0f;
+                if (arrowCount > 1)
+                {
+                    // Center arrow is 0, others spread by 15 deg
+                    angle = (i - (arrowCount - 1) / 2f) * 15f;
+                }
+
+                // Apply rotation to direction vector
+                Quaternion rotation = Quaternion.Euler(0, 0, angle);
+                Vector3 finalDirection = rotation * (Vector3)direction;
+
+                // Instantiate with the correct rotation for visual consistency
+                float lookAngle = Mathf.Atan2(finalDirection.y, finalDirection.x) * Mathf.Rad2Deg;
+                Quaternion finalRotation = Quaternion.Euler(0, 0, lookAngle);
+
+                GameObject projObj = Instantiate(prefabToSpawn, spawnPos, finalRotation);
                 var coreProj = projObj.GetComponent<InnerDuel.Core.Projectile>();
 
                 if (coreProj != null)
                 {
-                    Vector2 direction = new Vector2(dirX, 0);
-
-                    // Nếu bắn nhiều mũi tên (Skill 2), tính toán góc xòe hình quạt
-                    if (arrowCount > 1)
-                    {
-                        // Công cụ tính toán góc: Mũi tên giữa thẳng, các mũi tên bên lệch 15 độ
-                        float angle = (i - (arrowCount - 1) / 2f) * 15f;
-                        direction = Quaternion.Euler(0, 0, angle) * direction;
-                    }
-
-                    coreProj.Initialize(direction, playerID, damage, opponentLayer);
+                    coreProj.Initialize(finalDirection, playerID, damage, opponentLayer);
                 }
             }
         }
@@ -647,7 +656,7 @@ namespace InnerDuel.Characters
             yield return new WaitForSeconds(delay);
             isAttacking = false;
             canMove = true;
-            if (animator != null) animator.SetBool(animIsAttacking, false);
+            if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsAttacking, false);
         }
 
         private void PerformDash()
@@ -679,7 +688,7 @@ namespace InnerDuel.Characters
             canMove = false;
             rb.velocity = Vector2.zero;
             lastBlockStartTime = Time.time;
-            if (animator != null) animator.SetBool(animIsBlocking, true);
+            if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsBlocking, true);
             foreach (var ability in abilities) ability.OnBlockStart();
         }
 
@@ -687,7 +696,7 @@ namespace InnerDuel.Characters
         {
             isBlocking = false;
             canMove = true;
-            if (animator != null) animator.SetBool(animIsBlocking, false);
+            if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsBlocking, false);
             foreach (var ability in abilities) ability.OnBlockEnd();
         }
 
@@ -722,7 +731,7 @@ namespace InnerDuel.Characters
             if (healthBar != null) healthBar.SetHealth(currentHealth);
             
             // Animation
-            if (animator != null) animator.SetTrigger(animHit);
+            if (animator != null && animator.runtimeAnimatorController != null) animator.SetTrigger(animHit);
             
             // Death Check
             if (currentHealth <= 0)
@@ -752,7 +761,7 @@ namespace InnerDuel.Characters
             canMove = false;
             rb.velocity = Vector2.zero;
             
-            if (animator != null) animator.SetBool(animIsDead, true);
+            if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsDead, true);
             
             GameManager.Instance.OnCharacterDied(this);
         }
@@ -761,7 +770,7 @@ namespace InnerDuel.Characters
 
         private void UpdateAnimator()
         {
-            if (animator == null) return;
+            if (animator == null || animator.runtimeAnimatorController == null) return;
 
             animator.SetFloat(animMoveSpeed, Mathf.Abs(rb.velocity.x));
             animator.SetFloat(animVerticalSpeed, rb.velocity.y);
