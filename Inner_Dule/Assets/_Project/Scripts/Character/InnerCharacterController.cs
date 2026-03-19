@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using InnerDuel;
 using InnerDuel.Input;
 using System.Collections;
+using System;
 
 namespace InnerDuel.Characters
 {
@@ -59,6 +60,7 @@ namespace InnerDuel.Characters
         public float CurrentHealth => currentHealth;
         public float MaxHealth => characterData != null ? characterData.maxHealth : 100f;
         public float LastBlockStartTime => lastBlockStartTime;
+        public event Action<float, float> OnHealthChanged;
         
         // Input Buffers
         private Vector2 moveInput;
@@ -125,6 +127,7 @@ namespace InnerDuel.Characters
             else
             {
                 currentHealth = 100f;
+                NotifyHealthChanged();
             }
         }
         
@@ -136,9 +139,11 @@ namespace InnerDuel.Characters
             // Warning for missing ground layer removed per user request
             if (healthBar != null)
             {
-                healthBar.SetMaxHealth(currentHealth);
-                healthBar.SetHealth(currentHealth);
+                healthBar.SetMaxHealth(MaxHealth);
+                healthBar.SetHealth(currentHealth, true);
             }
+
+            NotifyHealthChanged();
             
             // Collect Abilities
             abilities.AddRange(GetComponents<BaseCharacterAbility>());
@@ -213,7 +218,12 @@ namespace InnerDuel.Characters
             
             // Stats
             currentHealth = characterData.maxHealth;
-            if (healthBar != null) healthBar.SetMaxHealth(currentHealth);
+            if (healthBar != null)
+            {
+                healthBar.SetMaxHealth(MaxHealth);
+                healthBar.SetHealth(currentHealth, true);
+            }
+            NotifyHealthChanged();
             
             // Visuals
             if (characterData.defaultSprite != null && spriteRenderer != null)
@@ -725,10 +735,11 @@ namespace InnerDuel.Characters
                 damage *= 0.2f; // Block 80% damage
             }
             
-            currentHealth -= damage;
+            currentHealth = Mathf.Clamp(currentHealth - damage, 0f, MaxHealth);
             invincibilityTimer = invincibilityDuration;
             
             if (healthBar != null) healthBar.SetHealth(currentHealth);
+            NotifyHealthChanged();
             
             // Animation
             if (animator != null && animator.runtimeAnimatorController != null) animator.SetTrigger(animHit);
@@ -767,6 +778,11 @@ namespace InnerDuel.Characters
         }
 
         public bool IsDead() => isDead;
+
+        private void NotifyHealthChanged()
+        {
+            OnHealthChanged?.Invoke(currentHealth, MaxHealth);
+        }
 
         private void UpdateAnimator()
         {
