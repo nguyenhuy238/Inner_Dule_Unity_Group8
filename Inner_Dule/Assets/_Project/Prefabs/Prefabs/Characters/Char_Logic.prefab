@@ -14,8 +14,6 @@ GameObject:
   - component: {fileID: 7005527226333867696}
   - component: {fileID: 447673200421180434}
   - component: {fileID: 4792576214740402402}
-  - component: {fileID: 1525528786553178186}
-  - component: {fileID: 1525528786553178200}
   m_Layer: 8
   m_Name: Char_Logic
   m_TagString: Untagged
@@ -199,6 +197,7 @@ MonoBehaviour:
   playerID: 1
   moveSpeedMultiplier: 1
   jumpForceMultiplier: 1
+  normalAttackPoint: {fileID: 0}
   attack1Point: {fileID: 0}
   attack2Point: {fileID: 0}
   attack3Point: {fileID: 0}
@@ -212,29 +211,3 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   healthBar: {fileID: 0}
---- !u!114 &1525528786553178186
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 764730707852355852}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1859665ba80ea11428d0143729607fe6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parryWindow: 0.3
-
---- !u!114 &1525528786553178200
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 764730707852355852}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b514c00966459fd4c840a6edf6123186, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

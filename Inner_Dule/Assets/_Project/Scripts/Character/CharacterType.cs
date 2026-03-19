@@ -16,8 +16,8 @@ namespace InnerDuel.Characters
         Creativity,    // Cảm Xúc - The Muse
         
         // Cặp 4: Tĩnh Lặng vs Thịnh Nộ
-        Stillness,     // Tĩnh Lặng - The Zen
-        Rage           // Thịnh Nộ - The Berserker
+        Reason,        // Tĩnh Lặng - The Zen -> Reason (Cung thủ)
+        Emotion        // Thịnh Nộ - The Berserker -> Emotion (Kỵ sĩ cầm rìu)
     }
     
     /// <summary>

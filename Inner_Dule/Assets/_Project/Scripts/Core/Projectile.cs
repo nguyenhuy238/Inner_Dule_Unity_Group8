@@ -8,7 +8,7 @@ namespace InnerDuel.Core
         [Header("Projectile Stats")]
         public float speed = 10f;
         public float damage = 10f;
-        public float lifetime = 3f;
+        public float lifetime = 5f;
         
         [Header("Effects")]
         public GameObject hitEffectPrefab;
@@ -70,11 +70,13 @@ namespace InnerDuel.Core
                 
                 OnHit();
             }
-            // Wall/Ground check
+            // Wall/Ground check - Removed per user request: Arrows now fly through ground for 5 seconds
+            /*
             else if (collision.gameObject.layer == LayerMask.NameToLayer("Ground")) 
             {
                 OnHit();
             }
+            */
         }
 
         private void OnHit()
