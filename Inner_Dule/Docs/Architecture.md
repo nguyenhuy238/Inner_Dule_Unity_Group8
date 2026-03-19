@@ -1,57 +1,70 @@
 # Kiến Trúc Hệ Thống (Architecture)
 
-Tài liệu này mô tả cấu trúc phân tầng và sự tương tác giữa các thành phần trong dự án.
+Tài liệu này mô tả cấu trúc phân tầng và luồng dữ liệu thực tế của dự án Inner Duel.
 
-## 1. Sơ đồ Kiến trúc (Mô tả bằng Text)
+## 1. Sơ Đồ Kiến Trúc Thực Tế
+
+Hệ thống được chia thành các lớp (Layers) nhưng ranh giới chưa thực sự cứng (còn phụ thuộc chéo).
 
 ```text
 [ Core Layer ]
-   ├── Singleton<T> (Base)
-   ├── Bootstrap (Khởi tạo)
-   ├── GameData (Static - Truyền dữ liệu giữa các Scene)
-   └── InputManager (Xử lý đầu vào)
+   ├── Singleton<T> (Base Class cho Managers)
+   ├── GameData (Static Data Container - Blackboard)
+   ├── InputManager (Wrapper cho Unity Input System)
+   └── AudioManager (Quản lý âm thanh)
 
 [ Logic Layer ]
-   ├── GameManager (Quản lý trạng thái trận đấu)
-   ├── InnerCharacterController (Điều khiển nhân vật)
-   └── BaseCharacterAbility (Hệ thống kỹ năng mở rộng)
+   ├── GameManager (Central Controller - God Object)
+   ├── InnerCharacterController (Character State Machine & Combat Logic)
+   ├── BaseCharacterAbility (Abilities mở rộng)
+   └── CharacterFactory (Utility tạo nhân vật - Chưa được tích hợp hoàn toàn)
 
 [ Data Layer (ScriptableObjects) ]
-   ├── CharacterData (Chỉ số, Prefab, Visuals)
-   └── MapData (Prefab đấu trường, Preview)
+   ├── CharacterData (Stats, Prefabs, Visual configs)
+   ├── MapData (Map Prefab, Info)
+   └── InputActions (Unity Input Asset)
 
-[ Presentation Layer (UI/Camera) ]
-   ├── UIManager (Thanh máu, Text, Panels)
-   └── CameraController (Cinemachine)
+[ Presentation Layer (UI & View) ]
+   ├── MainMenuManager, MapSelectManager, CharacterSelectManager (Scene UIs)
+   ├── UIManager (In-Game HUD)
+   ├── CameraController (Cinemachine Logic)
+   └── ResultScreenManager (End Game UI)
 ```
 
-## 2. Luồng Dữ Liệu (GameData Flow)
-`GameData` đóng vai trò là cầu nối giữa các giai đoạn của trò chơi:
+## 2. Luồng Dữ Liệu (Data Flow)
 
-1. **Character Select**: `player1Character` và `player2Character` được gán vào `GameData`.
-2. **Map Select**: `selectedMap` được gán vào `GameData`.
-3. **Loading**: Scene `LoadingScene` có thể hiển thị thông tin từ `GameData`.
-4. **Gameplay**: `GameManager` đọc `GameData` để Instantiate nhân vật và bản đồ.
-5. **Result**: `winnerName` được ghi vào `GameData` sau khi trận đấu kết thúc.
+### Quá trình Khởi tạo Trận đấu
+1.  **Selection**: Người chơi chọn Map và Nhân vật. ScriptableObject (`CharacterData`, `MapData`) được gán vào biến static trong `GameData`.
+2.  **Scene Load**: `MainGameScene` được tải.
+3.  **Initialization**:
+    - `GameManager` thức dậy (`Start/InitializeGame`).
+    - Đọc `GameData.selectedMap` -> Instantiate Map Prefab.
+    - Đọc `GameData.player1Character` -> Instantiate Player Prefab.
+    - `GameManager` lấy tham chiếu của `InputManager`, `UIManager`, `CameraController` và liên kết chúng lại với nhau (Dependency Injection thủ công).
 
-## 3. Phân Tích Vấn Đề Hiện Tại
+### Vòng lặp Update (Frame Loop)
+1.  **Input**: `InputManager` đọc tín hiệu từ thiết bị, cập nhật trạng thái các biến bool/vector.
+2.  **Logic**: `InnerCharacterController` đọc `InputManager`.
+    - Xử lý Physics (`Rigidbody2D`).
+    - Xử lý Cooldowns.
+    - Kích hoạt Animation (`Animator`).
+3.  **Visuals**:
+    - `CameraController` bám theo vị trí nhân vật.
+    - `UIManager` đọc máu hiện tại từ Controller để cập nhật thanh máu.
 
-### GameManager (God Object)
-- **Vấn đề**: `GameManager` hiện tại đang thực hiện quá nhiều nhiệm vụ (từ spawn nhân vật, link camera cho đến quản lý intro/ending).
-- **Gợi ý Refactor**: Chia nhỏ `GameManager` thành các thành phần:
-  - `MatchInitializer`: Chỉ phụ trách spawn nhân vật và map.
-  - `MatchFlowManager`: Chỉ phụ trách chuyển đổi giữa Intro -> Play -> Ending.
-  - `MatchConditionChecker`: Phụ trách kiểm tra điều kiện thắng/thua.
+## 3. Phân Tích Component Chính
 
-### CharacterFactory Không Được Sử Dụng
-- **Vấn đề**: `GameManager` đang tự tay instantiate prefabs, làm mất đi lợi ích của `CharacterFactory` (như tự động gán abilities đặc thù).
-- **Gợi ý Fix**: Cần cập nhật `GameManager` để sử dụng `CharacterFactory.Instance.CreateCharacter()` thay vì gọi `Instantiate` trực tiếp.
+### InnerCharacterController
+Đây là script quan trọng nhất, xử lý mọi hành vi của nhân vật.
+- **Dependencies**: `Rigidbody2D`, `Animator`, `InputManager`, `CharacterData`.
+- **Cơ chế**: Sử dụng một máy trạng thái đơn giản (bool flags: `isAttacking`, `isGrounded`, `isBlocking`) để quản lý hành vi.
 
-### Hệ Thống Bản Đồ (Hybrid)
-- **Vấn đề**: Việc quản lý bản đồ đang nửa vời giữa việc chọn scene và spawn prefab.
-- **Gợi ý Fix**: Thống nhất hệ thống bản đồ dưới dạng các Prefab độc lập. Mỗi `MapData` chỉ chứa một Prefab, và `GameManager` sẽ spawn prefab đó vào một scene "Arena" trống duy nhất. Điều này giúp giảm số lượng scene cần bảo trì.
+### GameManager
+Script quản lý dòng thời gian của trận đấu.
+- **Dependencies**: Hầu hết các manager khác.
+- **State Machine**: Intro -> Gameplay -> Ending -> Menu.
 
-## 4. Sự Phụ Thuộc (Dependencies)
-- **InnerCharacterController** phụ thuộc vào: `CharacterData`, `InputManager`, `StatusEffectManager`.
-- **GameManager** phụ thuộc vào: `GameData`, `UIManager`, `CameraController`.
-- **UIManager** phụ thuộc vào: `InnerCharacterController` (để lấy HP).
+## 4. Các Vấn Đề Kiến Trúc Cần Lưu Ý
+- **Couple chặt chẽ (Tight Coupling)**: `InnerCharacterController` đang tham chiếu trực tiếp tới `InputManager.Instance`. Điều này làm khó việc test tách biệt.
+- **Logic Phân Tán**: Logic sinh nhân vật (Spawning) đang nằm ở `GameManager` thay vì `CharacterFactory`.
+- **Hard Dependency**: `GameManager` tìm kiếm các thành phần UI bằng `FindObjectOfType`, có thể gây chậm khi khởi tạo scene.
