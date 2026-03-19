@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51a2cef8d3a9eff49abc319c36c7e533, type: 3}
   m_Name: Reason_Data
   m_EditorClassIdentifier: 
-  animatorController: {fileID: 0}
+  animatorController: {fileID: 9100000, guid: 1de29c7ec62d553499bbe1ba9613490c, type: 2}
   characterPrefab: {fileID: 764730707852355852, guid: 4e1d8c780b946cb4f9b88963c996dddd, type: 3}
   defaultSprite: {fileID: 0}
   type: 4
@@ -24,6 +24,9 @@ MonoBehaviour:
   defense: 5
   jumpForce: 12
   airControlMultiplier: 0.8
+  normalAttackDamage: 8
+  normalAttackRange: 0.8
+  normalAttackCooldown: 0.35
   attackDamage: 10
   attackRange: 1.2
   attackCooldown: 0.5
@@ -38,16 +41,18 @@ MonoBehaviour:
   attack3Damage: 20
   attack3Range: 1.8
   attack3Cooldown: 1.5
-  projectilePrefab: {fileID: 6487886321648570383, guid: a9cd8e7974b60e14381a7419c52a4c31, type: 3}
+  projectilePrefab: {fileID: 9002041548757915708, guid: 00a588767530f9144b3015460838569f, type: 3}
+  arrowSkill1Prefab: {fileID: 2582601272903668791, guid: 9af2bed0c0626fe4f9cdcd00c96d0eb0, type: 3}
+  arrowSkill3Prefab: {fileID: 6554503480051727019, guid: 3b7a0c21e4c83e4498b07d406fd62042, type: 3}
   projectileSpeed: 10
   attack3LeapForce: {x: 5, y: 5}
   attack3ControlLock: 0.2
   mainColor: {r: 1, g: 1, b: 1, a: 1}
   effectColor: {r: 1, g: 0, b: 0, a: 1}
-  canBlock: 0
+  canBlock: 1
   canDash: 0
   canPlaceTraps: 0
   hasLifeSteal: 0
-  canCounterAttack: 0
+  canCounterAttack: 1
   hasBerserkMode: 0
   hasRageMode: 0

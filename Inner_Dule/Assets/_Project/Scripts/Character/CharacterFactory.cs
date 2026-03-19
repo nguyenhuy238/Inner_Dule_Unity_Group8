@@ -120,12 +120,14 @@ namespace InnerDuel.Characters
             switch (type)
             {
                 case CharacterType.Discipline:
-                    characterObj.AddComponent<Ability_DisciplineParry>();
+                    characterObj.AddComponent<Ability_DisciplineParry>(); // Giữ nguyên
                     break;
                 case CharacterType.Spontaneity:
-                    characterObj.AddComponent<Ability_SpontaneityDash>();
+                    characterObj.AddComponent<Ability_SpontaneityDash>(); // Giữ nguyên
                     break;
-                // Add more cases here for other characters as their abilities are implemented
+                case CharacterType.Logic:
+                    characterObj.AddComponent<Ability_LogicArcher>(); // Thêm mới cho Logic
+                    break;
             }
         }
         
