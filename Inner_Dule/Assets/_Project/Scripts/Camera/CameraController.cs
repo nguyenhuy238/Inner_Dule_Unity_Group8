@@ -76,7 +76,7 @@ namespace InnerDuel.Camera
             }
         }
 
-        private void Update()
+      
         private void LateUpdate()
         {
             TryBuildAutoMapBounds();
