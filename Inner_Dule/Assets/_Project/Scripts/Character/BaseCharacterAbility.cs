@@ -15,6 +15,7 @@ namespace InnerDuel.Characters
 
         public virtual void OnUpdate() { }
         public virtual void OnAttack() { }
+        public virtual void OnNormalAttack() { }
         public virtual void OnDash() { }
         public virtual void OnBlockStart() { }
         public virtual void OnBlockEnd() { }
