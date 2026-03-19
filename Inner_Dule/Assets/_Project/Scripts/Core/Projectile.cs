@@ -81,11 +81,33 @@ namespace InnerDuel.Core
 
         private void OnHit()
         {
-            if (hitEffectPrefab != null)
+            
+            Animator animator = GetComponent<Animator>();
+            if (animator != null)
             {
-                Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+                
+                if (rb != null) rb.velocity = Vector2.zero;
+                isInitialized = false;
+
+               
+                Collider2D collider = GetComponent<Collider2D>();
+                if (collider != null) collider.enabled = false;
+
+                
+                animator.SetTrigger("Explore");
+
+                
+                Destroy(gameObject, 0.3f);
             }
-            Destroy(gameObject);
+            else
+            {
+               
+                if (hitEffectPrefab != null)
+                {
+                    Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+                }
+                Destroy(gameObject);
+            }
         }
     }
 }

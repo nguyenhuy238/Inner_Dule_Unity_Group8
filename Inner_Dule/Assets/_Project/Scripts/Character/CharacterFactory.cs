@@ -125,10 +125,13 @@ namespace InnerDuel.Characters
                 case CharacterType.Spontaneity:
                     characterObj.AddComponent<Ability_SpontaneityDash>(); // Giữ nguyên
                     break;
-                case CharacterType.Logic:
                 case CharacterType.Reason:
                     characterObj.AddComponent<Ability_LogicArcher>(); // Thêm mới cho Logic/Reason
                     break;
+                case CharacterType.Creativity:
+                    characterObj.AddComponent<Ability_Creative>(); // Thêm mới cho Logic
+                    break;
+
             }
         }
         

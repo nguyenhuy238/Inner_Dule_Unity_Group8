@@ -75,6 +75,7 @@ namespace InnerDuel.Characters
         [Header("Special Attack Properties")]
         public GameObject projectilePrefab; // Dùng cho cả nhân vật cũ và Mũi tên thường/Skill2 của Logic
         public GameObject arrowSkill1Prefab; // Cho nhân vật Logic (S1)
+        public GameObject arrowSkill2Prefab; // Cho nhân vật Logic (S2)
         public GameObject arrowSkill3Prefab; // Cho nhân vật Logic (S3)
         public float projectileSpeed = 15f;
         public Vector2 attack3LeapForce = new Vector2(5f, 5f); // For leap attacks
