@@ -421,6 +421,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2928361467476581736}
   - component: {fileID: 4825541838550696184}
+  - component: {fileID: 122337457524752703}
   m_Layer: 0
   m_Name: Background
   m_TagString: Untagged
