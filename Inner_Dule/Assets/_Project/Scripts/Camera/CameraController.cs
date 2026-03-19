@@ -53,6 +53,7 @@ namespace InnerDuel.Camera
         private Transform player2;
         private bool isEndingSequence = false;
         private float endingTimer = 0f;
+        private Vector3 endingPosition;
         private float currentZoomVelocity;
         private float initialOrthographicSize;
         private CinemachineBrain mainBrain;
@@ -65,8 +66,17 @@ namespace InnerDuel.Camera
         private void Start()
         {
             SetupCamera();
+
+            // Tự động tìm 2 nhân vật dựa trên Tag "Player" mà bố đã cài lúc trước
+            GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+            if (players.Length >= 2)
+            {
+                // Gán nhân vật vào camera
+                SetTargets(players[0].transform, players[1].transform);
+            }
         }
 
+        private void Update()
         private void LateUpdate()
         {
             TryBuildAutoMapBounds();
