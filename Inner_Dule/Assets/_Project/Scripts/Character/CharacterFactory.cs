@@ -131,7 +131,9 @@ namespace InnerDuel.Characters
                 case CharacterType.Creativity:
                     characterObj.AddComponent<Ability_Creative>(); // Thêm mới cho Logic
                     break;
-
+                case CharacterType.Emotion:
+                    characterObj.AddComponent<Ability_EmotionAxe>(); // Thêm mới cho Emotion/Axe
+                    break;
             }
         }
         

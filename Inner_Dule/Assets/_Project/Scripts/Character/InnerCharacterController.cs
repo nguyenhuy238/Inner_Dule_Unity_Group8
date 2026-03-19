@@ -18,6 +18,7 @@ namespace InnerDuel.Characters
         [Header("Movement Settings (Overrides Data if needed)")]
         public float moveSpeedMultiplier = 1f;
         public float jumpForceMultiplier = 1f;
+        public float damageMultiplier = 1f;
 
         [Header("Combat References")]
         public Transform normalAttackPoint;
@@ -277,7 +278,7 @@ namespace InnerDuel.Characters
             if (jumpRequested)
             {
                 // Removed isGrounded check for "infinite jumping" per user request
-                if (canMove && !isAttacking && !isBlocking)
+                if (canMove && !isBlocking) // Allowed to jump while attacking for infinite jump feel
                 {
                     jumpQueued = true;
                     Debug.Log($"[InnerDuel] Player {playerID} Jump Queued (Infinite)!");
@@ -460,6 +461,7 @@ namespace InnerDuel.Characters
             rb.velocity = new Vector2(0, rb.velocity.y); // Stop moving when attacking
 
             float damage = characterData != null ? characterData.normalAttackDamage : 8f;
+            damage *= damageMultiplier;
             float range = characterData != null ? characterData.normalAttackRange : 0.8f;
             float cooldown = characterData != null ? characterData.normalAttackCooldown : 0.35f;
 
@@ -527,6 +529,9 @@ namespace InnerDuel.Characters
                         break;
                 }
             }
+
+            // Apply global damage multiplier
+            damage *= damageMultiplier;
 
             // Set Cooldown
             switch (attackIndex)
@@ -657,6 +662,21 @@ namespace InnerDuel.Characters
             isAttacking = false;
             canMove = true;
             if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsAttacking, false);
+        }
+
+        public void PauseAnimator(float duration)
+        {
+            StartCoroutine(PauseAnimatorRoutine(duration));
+        }
+
+        private IEnumerator PauseAnimatorRoutine(float duration)
+        {
+            if (animator != null)
+            {
+                animator.speed = 0f;
+                yield return new WaitForSeconds(duration);
+                animator.speed = 1f;
+            }
         }
 
         private void PerformDash()
