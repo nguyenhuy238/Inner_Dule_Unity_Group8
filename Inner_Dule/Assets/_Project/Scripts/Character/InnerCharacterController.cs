@@ -35,6 +35,10 @@ namespace InnerDuel.Characters
         
         [Header("Visuals")]
         public HealthBar healthBar;
+
+        [Header("Hit State")]
+        [Tooltip("Duration that blocks Attack/Skill input after taking damage.")]
+        [SerializeField] private float hitStunDuration = 0.25f;
         
         // Components
         private Rigidbody2D rb;
@@ -53,10 +57,13 @@ namespace InnerDuel.Characters
         private bool canMove = true;
         private float controlLockUntil = 0f;
         private float lastBlockStartTime = 0f;
+        private float hitStunTimer = 0f;
+        private int attackActionToken = 0;
 
         // Public Properties for Abilities & UI
         public bool IsBlocking => isBlocking;
         public bool IsDashing => isDashing;
+        public bool IsHitStunned => hitStunTimer > 0f;
         public float CurrentHealth => currentHealth;
         public float MaxHealth => characterData != null ? characterData.maxHealth : 100f;
         public float LastBlockStartTime => lastBlockStartTime;
@@ -266,6 +273,7 @@ namespace InnerDuel.Characters
             if (dashCooldown > 0) dashCooldown -= Time.deltaTime;
             if (blockCooldown > 0) blockCooldown -= Time.deltaTime;
             if (invincibilityTimer > 0) invincibilityTimer -= Time.deltaTime;
+            if (hitStunTimer > 0) hitStunTimer -= Time.deltaTime;
         }
 
         private void HandleInput()
@@ -295,7 +303,7 @@ namespace InnerDuel.Characters
             }
 
             // Attacks
-            if (canMove && !isBlocking && !isDashing) // Can attack while moving (air or ground) usually? Let's say yes but it locks movement
+            if (canMove && !isBlocking && !isDashing && !IsHitStunned) // Lock attack/skill while being hit
             {
                 if (inputManager.GetButtonDown(playerID, "NormalAttack") && normalAttackCooldown <= 0)
                 {
@@ -468,6 +476,7 @@ namespace InnerDuel.Characters
             isAttacking = true;
             canMove = false;
             rb.velocity = new Vector2(0, rb.velocity.y); // Stop moving when attacking
+            int attackToken = ++attackActionToken;
 
             float damage = characterData != null ? characterData.normalAttackDamage : 8f;
             float range = characterData != null ? characterData.normalAttackRange : 0.8f;
@@ -483,11 +492,11 @@ namespace InnerDuel.Characters
             }
 
             // Melee Hitbox
-            StartCoroutine(MeleeAttackRoutine(0.15f, normalAttackPoint, range, damage));
+            StartCoroutine(MeleeAttackRoutine(0.15f, normalAttackPoint, range, damage, attackToken));
 
             // Reset State
             float recoveryTime = 0.3f;
-            StartCoroutine(ResetAttackState(recoveryTime));
+            StartCoroutine(ResetAttackState(recoveryTime, attackToken));
             
             // Notify abilities
             foreach (var ability in abilities)
@@ -502,6 +511,7 @@ namespace InnerDuel.Characters
             isAttacking = true;
             canMove = false;
             rb.velocity = new Vector2(0, rb.velocity.y); // Stop moving when attacking on ground
+            int attackToken = ++attackActionToken;
 
             float damage = 10f;
             float range = 1f;
@@ -585,24 +595,24 @@ namespace InnerDuel.Characters
 
             if (isProjectile)
             {
-                StartCoroutine(SpawnProjectileRoutine(0.2f, damage));
+                StartCoroutine(SpawnProjectileRoutine(0.2f, damage, 1, null, attackToken));
             }
             else
             {
                 // Melee Hitbox
-                StartCoroutine(MeleeAttackRoutine(0.2f, point, range, damage));
+                StartCoroutine(MeleeAttackRoutine(0.2f, point, range, damage, attackToken));
             }
 
             // Reset State
             float recoveryTime = 0.4f; // Default recovery
-            StartCoroutine(ResetAttackState(recoveryTime));
+            StartCoroutine(ResetAttackState(recoveryTime, attackToken));
         }
 
-        private IEnumerator MeleeAttackRoutine(float delay, Transform point, float range, float damage)
+        private IEnumerator MeleeAttackRoutine(float delay, Transform point, float range, float damage, int attackToken)
         {
             yield return new WaitForSeconds(delay);
-            
-            if (point == null) yield break;
+
+            if (point == null || attackToken != attackActionToken || IsHitStunned || isDead) yield break;
             
             Collider2D[] hits = Physics2D.OverlapCircleAll(point.position, range, opponentLayer);
             foreach (var hit in hits)
@@ -616,9 +626,12 @@ namespace InnerDuel.Characters
             }
         }
 
-        public IEnumerator SpawnProjectileRoutine(float delay, float damage, int arrowCount = 1, GameObject overridePrefab = null)
+        public IEnumerator SpawnProjectileRoutine(float delay, float damage, int arrowCount = 1, GameObject overridePrefab = null, int attackToken = -1)
         {
             yield return new WaitForSeconds(delay);
+
+            if (isDead || IsHitStunned) yield break;
+            if (attackToken >= 0 && attackToken != attackActionToken) yield break;
 
             GameObject prefabToSpawn = overridePrefab != null ? overridePrefab : characterData.projectilePrefab;
             if (prefabToSpawn == null)
@@ -661,12 +674,25 @@ namespace InnerDuel.Characters
             }
         }
 
-        private IEnumerator ResetAttackState(float delay)
+        private IEnumerator ResetAttackState(float delay, int attackToken)
         {
             yield return new WaitForSeconds(delay);
+            if (attackToken != attackActionToken) yield break;
             isAttacking = false;
             canMove = true;
             if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsAttacking, false);
+        }
+
+        private void InterruptAttackByHit()
+        {
+            if (!isAttacking) return;
+
+            attackActionToken++;
+            isAttacking = false;
+            canMove = true;
+
+            if (animator != null && animator.runtimeAnimatorController != null)
+                animator.SetBool(animIsAttacking, false);
         }
 
         private void PerformDash()
@@ -737,6 +763,8 @@ namespace InnerDuel.Characters
             
             currentHealth = Mathf.Clamp(currentHealth - damage, 0f, MaxHealth);
             invincibilityTimer = invincibilityDuration;
+            hitStunTimer = Mathf.Max(hitStunTimer, hitStunDuration);
+            InterruptAttackByHit();
             
             if (healthBar != null) healthBar.SetHealth(currentHealth);
             NotifyHealthChanged();
