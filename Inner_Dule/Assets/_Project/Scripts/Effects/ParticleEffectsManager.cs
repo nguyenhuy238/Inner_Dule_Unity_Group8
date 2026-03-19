@@ -151,8 +151,8 @@ namespace InnerDuel.Effects
                 case CharacterType.Spontaneity: return spontaneityHitEffect;
                 case CharacterType.Logic: return logicHitEffect;
                 case CharacterType.Creativity: return creativityHitEffect;
-                case CharacterType.Stillness: return stillnessHitEffect;
-                case CharacterType.Rage: return rageHitEffect;
+                case CharacterType.Reason: return stillnessHitEffect;
+                case CharacterType.Emotion: return rageHitEffect;
                 default: return null;
             }
         }

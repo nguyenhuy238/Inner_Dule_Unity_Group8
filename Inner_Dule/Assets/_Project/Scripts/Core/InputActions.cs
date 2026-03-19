@@ -40,7 +40,9 @@ namespace InnerDuel.Input
             p1MoveComposite.With("Left", "<Keyboard>/a");
             p1MoveComposite.With("Right", "<Keyboard>/d");
             
-            Player1.AddAction("Jump", InputActionType.Button, "<Keyboard>/space");
+            var p1Jump = Player1.AddAction("Jump", InputActionType.Button);
+            p1Jump.AddBinding("<Keyboard>/space"); 
+            
             Player1.AddAction("Block", InputActionType.Button, "<Keyboard>/s"); 
             Player1.AddAction("Dash", InputActionType.Button, "<Keyboard>/leftShift");
             
@@ -58,7 +60,9 @@ namespace InnerDuel.Input
             p2MoveComposite.With("Left", "<Keyboard>/leftArrow");
             p2MoveComposite.With("Right", "<Keyboard>/rightArrow");
             
-            Player2.AddAction("Jump", InputActionType.Button, "<Keyboard>/upArrow"); 
+            var p2Jump = Player2.AddAction("Jump", InputActionType.Button);
+            p2Jump.AddBinding("<Keyboard>/upArrow");
+            
             Player2.AddAction("Block", InputActionType.Button, "<Keyboard>/downArrow");
             Player2.AddAction("Dash", InputActionType.Button, "<Keyboard>/rightShift");
             
