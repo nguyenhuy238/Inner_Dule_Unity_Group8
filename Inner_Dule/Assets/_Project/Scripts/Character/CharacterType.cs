@@ -16,8 +16,8 @@ namespace InnerDuel.Characters
         Creativity,    // Cảm Xúc - The Muse
         
         // Cặp 4: Tĩnh Lặng vs Thịnh Nộ
-        Stillness,     // Tĩnh Lặng - The Zen
-        Rage           // Thịnh Nộ - The Berserker
+        Reason,        // Tĩnh Lặng - The Zen -> Reason (Cung thủ)
+        Emotion        // Thịnh Nộ - The Berserker -> Emotion (Kỵ sĩ cầm rìu)
     }
     
     /// <summary>
@@ -27,9 +27,15 @@ namespace InnerDuel.Characters
     [CreateAssetMenu(fileName = "NewCharacterData", menuName = "InnerDuel/Character/CharacterData")]
     public class CharacterData : ScriptableObject
     {
+        [Header("Visual Assets")]
+        public RuntimeAnimatorController animatorController;
+        public GameObject characterPrefab; // If null, uses default scene object
+        public Sprite defaultSprite;
+        
         [Header("Identity")]
         public CharacterType type;
         public string characterName;
+        public Sprite portrait;
         [TextArea(3, 10)]
         public string description;
         
@@ -38,13 +44,43 @@ namespace InnerDuel.Characters
         public float moveSpeed = 5f;
         public float defense = 5f; // Giảm sát thương nhận vào
         
+        [Header("Movement Physics")]
+        public float jumpForce = 12f;
+        public float airControlMultiplier = 0.8f;
+
         [Header("Combat Stats")]
-        public float attackDamage = 10f;
-        public float attackRange = 1.2f;
-        public float attackCooldown = 0.5f;
+        public float normalAttackDamage = 8f;
+        public float normalAttackRange = 0.8f;
+        public float normalAttackCooldown = 0.35f;
+        
+        public float attackDamage = 10f; // Base/Default (Legacy/Generic)
+        public float attackRange = 1.2f; // Base/Default (Legacy/Generic)
+        public float attackCooldown = 0.5f; // Base/Default (Legacy/Generic)
         public float dashSpeedMultiplier = 3f;
         public float dashDuration = 0.2f;
+
+        [Header("Specific Attacks")]
+        public float attack1Damage = 10f;
+        public float attack1Range = 1.2f;
+        public float attack1Cooldown = 0.5f;
         
+        public float attack2Damage = 15f;
+        public float attack2Range = 1.5f;
+        public float attack2Cooldown = 1.0f;
+        
+        public float attack3Damage = 20f;
+        public float attack3Range = 1.8f;
+        public float attack3Cooldown = 1.5f;
+        
+        [Header("Special Attack Properties")]
+        public GameObject projectilePrefab; // Dùng cho cả nhân vật cũ và Mũi tên thường/Skill2 của Logic
+        public GameObject arrowSkill1Prefab; // Cho nhân vật Logic (S1)
+        public GameObject arrowSkill2Prefab; // Cho nhân vật Logic (S2)
+        public GameObject arrowSkill3Prefab; // Cho nhân vật Logic (S3)
+        public float projectileSpeed = 15f;
+        public Vector2 attack3LeapForce = new Vector2(5f, 5f); // For leap attacks
+        public float attack3ControlLock = 0.2f;
+
         [Header("Visuals")]
         public Color mainColor = Color.white;
         public Color effectColor = Color.red;

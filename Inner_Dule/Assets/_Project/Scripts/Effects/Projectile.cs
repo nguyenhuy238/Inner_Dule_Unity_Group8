@@ -35,21 +35,7 @@ namespace InnerDuel.Effects
                 return;
             }
 
-            // Try to deal damage to HealthBar
-            var health = other.GetComponent<HealthBar>();
-            if (health != null)
-            {
-                health.TakeDamage(damage);
-            }
-
-            // Try to deal damage to PlayerMovement2D
-            var playerMovement = other.GetComponent<PlayerMovement2D>();
-            if (playerMovement != null)
-            {
-                playerMovement.TakeDamage(damage);
-            }
-
-            // Try to deal damage to InnerCharacterController
+            // Damage the controller only
             var characterController = other.GetComponent<InnerCharacterController>();
             if (characterController != null)
             {
@@ -69,20 +55,6 @@ namespace InnerDuel.Effects
             if (!string.IsNullOrEmpty(targetTag) && !collision.gameObject.CompareTag(targetTag))
             {
                 return;
-            }
-
-            // Try to deal damage to HealthBar
-            var health = collision.gameObject.GetComponent<HealthBar>();
-            if (health != null)
-            {
-                health.TakeDamage(damage);
-            }
-
-            // Try to deal damage to PlayerMovement2D
-            var playerMovement = collision.gameObject.GetComponent<PlayerMovement2D>();
-            if (playerMovement != null)
-            {
-                playerMovement.TakeDamage(damage);
             }
 
             // Try to deal damage to InnerCharacterController

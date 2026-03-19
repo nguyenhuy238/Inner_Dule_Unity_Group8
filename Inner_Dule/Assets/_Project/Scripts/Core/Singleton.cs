@@ -8,7 +8,7 @@ namespace InnerDuel.Core
     /// <typeparam name="T">The type of the Singleton.</typeparam>
     public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {
-        private static T _instance;
+        protected static T _instance;
         private static readonly object _lock = new object();
         private static bool _applicationIsQuitting = false;
 

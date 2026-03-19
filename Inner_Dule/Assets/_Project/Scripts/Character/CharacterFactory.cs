@@ -9,8 +9,8 @@ namespace InnerDuel.Characters
         public GameObject spontaneityPrefab;
         public GameObject logicPrefab;
         public GameObject creativityPrefab;
-        public GameObject stillnessPrefab;
-        public GameObject ragePrefab;
+        public GameObject stillnessPrefab; // now Reason
+        public GameObject ragePrefab;      // now Emotion
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -120,12 +120,18 @@ namespace InnerDuel.Characters
             switch (type)
             {
                 case CharacterType.Discipline:
-                    characterObj.AddComponent<Ability_DisciplineParry>();
+                    characterObj.AddComponent<Ability_DisciplineParry>(); // Giữ nguyên
                     break;
                 case CharacterType.Spontaneity:
-                    characterObj.AddComponent<Ability_SpontaneityDash>();
+                    characterObj.AddComponent<Ability_SpontaneityDash>(); // Giữ nguyên
                     break;
-                // Add more cases here for other characters as their abilities are implemented
+                case CharacterType.Reason:
+                    characterObj.AddComponent<Ability_LogicArcher>(); // Thêm mới cho Logic/Reason
+                    break;
+                case CharacterType.Creativity:
+                    characterObj.AddComponent<Ability_Creative>(); // Thêm mới cho Logic
+                    break;
+
             }
         }
         
@@ -139,8 +145,8 @@ namespace InnerDuel.Characters
                 case CharacterType.Spontaneity: selectedPrefab = spontaneityPrefab; break;
                 case CharacterType.Logic: selectedPrefab = logicPrefab; break;
                 case CharacterType.Creativity: selectedPrefab = creativityPrefab; break;
-                case CharacterType.Stillness: selectedPrefab = stillnessPrefab; break;
-                case CharacterType.Rage: selectedPrefab = ragePrefab; break;
+                case CharacterType.Reason: selectedPrefab = stillnessPrefab; break;
+                case CharacterType.Emotion: selectedPrefab = ragePrefab; break;
             }
             
             if (selectedPrefab == null)
@@ -198,11 +204,20 @@ namespace InnerDuel.Characters
                 case CharacterType.Discipline:
                     data.characterName = "Kỷ Luật (The Warden) [Fallback]";
                     data.maxHealth = 150f;
-                    data.moveSpeed = 3f;
+                    data.moveSpeed = 4f;
                     data.defense = 15f;
+                    
+                    data.jumpForce = 12f;
+                    data.airControlMultiplier = 0.5f;
+                    
                     data.attackDamage = 20f;
                     data.attackRange = 1.3f;
                     data.attackCooldown = 0.8f;
+                    
+                    data.attack1Damage = 15f; data.attack1Range = 1.3f; data.attack1Cooldown = 0.5f;
+                    data.attack2Damage = 20f; data.attack2Range = 1.4f; data.attack2Cooldown = 1.0f;
+                    data.attack3Damage = 25f; data.attack3Range = 1.5f; data.attack3Cooldown = 1.5f;
+                    
                     data.mainColor = new Color(0.2f, 0.4f, 1f);
                     data.effectColor = Color.yellow;
                     data.canBlock = true;
@@ -211,12 +226,23 @@ namespace InnerDuel.Characters
                     
                 case CharacterType.Spontaneity:
                     data.characterName = "Ngẫu Hứng (The Maverick) [Fallback]";
-                    data.maxHealth = 80f;
+                    data.maxHealth = 100f;
                     data.moveSpeed = 7.5f;
                     data.defense = 2f;
+                    
+                    data.jumpForce = 14f;
+                    data.airControlMultiplier = 0.9f;
+                    
                     data.attackDamage = 12f;
                     data.attackRange = 1.1f;
                     data.attackCooldown = 0.35f;
+                    
+                    data.attack1Damage = 10f; data.attack1Range = 1.1f; data.attack1Cooldown = 0.3f;
+                    data.attack2Damage = 12f; data.attack2Range = 1.2f; data.attack2Cooldown = 0.5f;
+                    data.attack3Damage = 15f; data.attack3Range = 1.3f; data.attack3Cooldown = 0.8f;
+                    
+                    data.attack3LeapForce = new Vector2(8f, 5f);
+                    
                     data.dashSpeedMultiplier = 4f;
                     data.dashDuration = 0.25f;
                     data.mainColor = Color.white;
@@ -224,11 +250,49 @@ namespace InnerDuel.Characters
                     data.canDash = true;
                     break;
                 
+                case CharacterType.Reason:
+                    data.characterName = "Reason (Cung thủ) [Fallback]";
+                    data.maxHealth = 110f;
+                    data.moveSpeed = 6.5f;
+                    data.defense = 4f;
+                    data.jumpForce = 13f;
+                    data.airControlMultiplier = 0.85f;
+                    data.normalAttackDamage = 8f;
+                    data.attack1Damage = 12f;
+                    data.attack2Damage = 10f; // Mỗi mũi tên trong chùm 3
+                    data.attack3Damage = 25f;
+                    data.mainColor = new Color(0.4f, 1f, 0.4f); // Greenish
+                    data.effectColor = Color.green;
+                    data.canDash = true;
+                    break;
+
+                case CharacterType.Emotion:
+                    data.characterName = "Emotion (Kỵ sĩ cầm rìu) [Fallback]";
+                    data.maxHealth = 180f;
+                    data.moveSpeed = 4.5f;
+                    data.defense = 12f;
+                    data.jumpForce = 11f;
+                    data.airControlMultiplier = 0.4f;
+                    data.normalAttackDamage = 15f;
+                    data.attack1Damage = 20f;
+                    data.attack2Damage = 25f;
+                    data.attack3Damage = 35f;
+                    data.mainColor = new Color(1f, 0.4f, 0.4f); // Reddish
+                    data.effectColor = Color.red;
+                    data.canBlock = true;
+                    data.hasBerserkMode = true;
+                    data.attack3LeapForce = new Vector2(6f, 4f);
+                    break;
+                
                 default:
                     data.characterName = type.ToString() + " [Fallback]";
                     data.maxHealth = 100f;
                     data.moveSpeed = 5f;
                     data.attackDamage = 10f;
+                    
+                    data.attack1Damage = 10f; data.attack1Range = 1.2f; data.attack1Cooldown = 0.5f;
+                    data.attack2Damage = 12f; data.attack2Range = 1.4f; data.attack2Cooldown = 0.8f;
+                    data.attack3Damage = 15f; data.attack3Range = 1.6f; data.attack3Cooldown = 1.2f;
                     break;
             }
             

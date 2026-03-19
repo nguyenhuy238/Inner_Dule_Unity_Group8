@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51a2cef8d3a9eff49abc319c36c7e533, type: 3}
+  m_Name: Creativity_Data
+  m_EditorClassIdentifier: 
+  animatorController: {fileID: 0}
+  characterPrefab: {fileID: 764730707852355852, guid: 4ad4f19598f3d8b45a3e343b388727c3, type: 3}
+  defaultSprite: {fileID: 0}
+  type: 3
+  characterName: Creativity
+  portrait: {fileID: 21300000, guid: 7343124f856f6ad41bbf234510b7451b, type: 3}
+  description: 
+  maxHealth: 100
+  moveSpeed: 5
+  defense: 5
+  jumpForce: 12
+  airControlMultiplier: 0.8
+  normalAttackDamage: 8
+  normalAttackRange: 0.8
+  normalAttackCooldown: 0.35
+  attackDamage: 10
+  attackRange: 1.2
+  attackCooldown: 0.5
+  dashSpeedMultiplier: 3
+  dashDuration: 0.2
+  attack1Damage: 10
+  attack1Range: 1.2
+  attack1Cooldown: 0.5
+  attack2Damage: 15
+  attack2Range: 1.5
+  attack2Cooldown: 1
+  attack3Damage: 20
+  attack3Range: 1.8
+  attack3Cooldown: 1.5
+  projectilePrefab: {fileID: 8866539524337711559, guid: 80d09644c9670f94eaa23dfbd4e0a49a, type: 3}
+  arrowSkill1Prefab: {fileID: 1003014274181348562, guid: 6de68eb4b94798d40922879ecc3c115a, type: 3}
+  arrowSkill2Prefab: {fileID: 4713698062760516982, guid: 5a840b0625eb58140be0e443c2c067a6, type: 3}
+  arrowSkill3Prefab: {fileID: 7644785769362447974, guid: ab98f9dad014ebb44a1aa9b5e394fdb1, type: 3}
+  projectileSpeed: 10
+  attack3LeapForce: {x: 5, y: 5}
+  attack3ControlLock: 0.2
+  mainColor: {r: 1, g: 1, b: 1, a: 1}
+  effectColor: {r: 1, g: 0, b: 0, a: 1}
+  canBlock: 1
+  canDash: 0
+  canPlaceTraps: 0
+  hasLifeSteal: 0
+  canCounterAttack: 0
+  hasBerserkMode: 0
+  hasRageMode: 0

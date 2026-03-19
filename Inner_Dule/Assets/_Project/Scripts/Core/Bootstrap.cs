@@ -18,6 +18,15 @@ namespace InnerDuel.Core
         private void Start()
         {
             InitializeManagers();
+
+            // Defensive: if Bootstrap is accidentally placed in the target scene,
+            // avoid re-loading the same scene in a loop (which destroys & respawns everything).
+            if (SceneManager.GetActiveScene().name == nextSceneName)
+            {
+                Debug.LogWarning($"[Bootstrap] Already in '{nextSceneName}'. Skipping scene load to prevent reload loop.");
+                return;
+            }
+
             StartCoroutine(NavigateToNextScene());
         }
 
