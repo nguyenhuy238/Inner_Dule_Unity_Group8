@@ -571,7 +571,7 @@ namespace InnerDuel.Characters
             bool isProjectile = (characterData != null && characterData.projectilePrefab != null && (attackIndex == 1 || attackIndex == 3));
             
             // Logic Archer handles all projectiles directly in Ability_LogicArcher
-            if (characterData != null && characterData.type == CharacterType.Logic)
+            if (characterData != null && characterData.type == CharacterType.Logic || characterData != null && characterData.type == CharacterType.Creativity)
             {
                 isProjectile = false;
             }

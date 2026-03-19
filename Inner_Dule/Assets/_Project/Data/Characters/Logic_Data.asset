@@ -42,8 +42,8 @@ MonoBehaviour:
   attack3Range: 1.8
   attack3Cooldown: 1.5
   projectilePrefab: {fileID: 0}
-  arrowSkill1Prefab: {fileID: 8316155986927514937, guid: 9af2bed0c0626fe4f9cdcd00c96d0eb0, type: 3}
-  arrowSkill3Prefab: {fileID: 1533224424905380598, guid: 3b7a0c21e4c83e4498b07d406fd62042, type: 3}
+  arrowSkill1Prefab: {fileID: 0}
+  arrowSkill3Prefab: {fileID: 0}
   projectileSpeed: 10
   attack3LeapForce: {x: 5, y: 5}
   attack3ControlLock: 0.2

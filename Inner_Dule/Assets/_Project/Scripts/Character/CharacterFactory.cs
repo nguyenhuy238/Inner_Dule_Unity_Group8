@@ -128,6 +128,10 @@ namespace InnerDuel.Characters
                 case CharacterType.Logic:
                     characterObj.AddComponent<Ability_LogicArcher>(); // Thêm mới cho Logic
                     break;
+                case CharacterType.Creativity:
+                    characterObj.AddComponent<Ability_Creative>(); // Thêm mới cho Logic
+                    break;
+
             }
         }
         

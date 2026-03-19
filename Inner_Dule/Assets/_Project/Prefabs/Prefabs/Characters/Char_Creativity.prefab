@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 447673200421180434}
   - component: {fileID: 4792576214740402402}
   - component: {fileID: 4279161098551883834}
+  - component: {fileID: -4284580431683380921}
   m_Layer: 8
   m_Name: Char_Creativity
   m_TagString: Player2
@@ -224,5 +225,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1368b8b880fe1fc48aa3298057c91261, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  teleportDistance: 5
+  teleportDistance: -3
   teleportEffect: {fileID: 0}
+--- !u!114 &-4284580431683380921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 764730707852355852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a905c2903e16b714687a231c5c813b6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
