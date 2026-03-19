@@ -24,6 +24,9 @@ MonoBehaviour:
   defense: 5
   jumpForce: 12
   airControlMultiplier: 0.8
+  normalAttackDamage: 8
+  normalAttackRange: 0.8
+  normalAttackCooldown: 0.35
   attackDamage: 10
   attackRange: 1.2
   attackCooldown: 0.5
@@ -38,7 +41,9 @@ MonoBehaviour:
   attack3Damage: 20
   attack3Range: 1.8
   attack3Cooldown: 1.5
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 8866539524337711559, guid: 80d09644c9670f94eaa23dfbd4e0a49a, type: 3}
+  arrowSkill1Prefab: {fileID: 1003014274181348562, guid: 6de68eb4b94798d40922879ecc3c115a, type: 3}
+  arrowSkill3Prefab: {fileID: 7644785769362447974, guid: ab98f9dad014ebb44a1aa9b5e394fdb1, type: 3}
   projectileSpeed: 10
   attack3LeapForce: {x: 5, y: 5}
   attack3ControlLock: 0.2

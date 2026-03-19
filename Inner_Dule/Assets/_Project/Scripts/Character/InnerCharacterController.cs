@@ -713,6 +713,12 @@ namespace InnerDuel.Characters
             // Re-check if still alive/valid after ability logic
             if (isDead) return;
 
+            // Play hit sound
+            if (InnerDuel.Audio.AudioManager.Instance != null)
+            {
+                InnerDuel.Audio.AudioManager.Instance.PlayRandomHitSound();
+            }
+
             // Block Logic
             if (isBlocking)
             {
