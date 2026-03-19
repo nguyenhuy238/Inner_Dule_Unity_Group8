@@ -1036,7 +1036,7 @@ Camera:
   far clip plane: 5000
   field of view: 40
   orthographic: 1
-  orthographic size: 4.207613
+  orthographic size: 4.4355164
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -1086,6 +1086,8 @@ MonoBehaviour:
   maxZoom: 10
   zoomMultiplier: 0.5
   zoomSmoothTime: 0.1
+  closeRangeZoomPadding: 1.25
+  closeRangeDistance: 3
   movementDamping: 0.1
   enableCameraBound: 1
   confinerCollider: {fileID: 0}
