@@ -798,6 +798,22 @@ namespace InnerDuel.Characters
             Debug.Log($"[InnerDuel] {gameObject.name} triggered COUNTER ATTACK!");
         }
 
+        public void PauseAnimator(float duration)
+        {
+            StartCoroutine(PauseAnimatorRoutine(duration));
+        }
+
+        private IEnumerator PauseAnimatorRoutine(float duration)
+        {
+            if (animator != null)
+            {
+                float originalSpeed = animator.speed;
+                animator.speed = 0;
+                yield return new WaitForSeconds(duration);
+                animator.speed = originalSpeed;
+            }
+        }
+
         private void Die()
         {
             if (isDead) return;
