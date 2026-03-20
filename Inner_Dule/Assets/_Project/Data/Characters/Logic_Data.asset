@@ -22,7 +22,7 @@ MonoBehaviour:
   maxHealth: 100
   moveSpeed: 5
   defense: 5
-  jumpForce: 12
+  jumpForce: 15
   airControlMultiplier: 0.8
   normalAttackDamage: 8
   normalAttackRange: 0.8
@@ -43,6 +43,7 @@ MonoBehaviour:
   attack3Cooldown: 1.5
   projectilePrefab: {fileID: 0}
   arrowSkill1Prefab: {fileID: 0}
+  arrowSkill2Prefab: {fileID: 0}
   arrowSkill3Prefab: {fileID: 0}
   projectileSpeed: 10
   attack3LeapForce: {x: 5, y: 5}

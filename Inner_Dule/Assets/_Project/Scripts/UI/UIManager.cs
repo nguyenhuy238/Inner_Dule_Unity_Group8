@@ -70,12 +70,14 @@ namespace InnerDuel.UI
             if (player1 != null && player1HealthBar != null)
             {
                 player1HealthBar.SetMaxHealth(player1.MaxHealth);
+                player1HealthBar.BindToCharacter(player1);
                 player1.healthBar = player1HealthBar;
             }
             
             if (player2 != null && player2HealthBar != null)
             {
                 player2HealthBar.SetMaxHealth(player2.MaxHealth);
+                player2HealthBar.BindToCharacter(player2);
                 player2.healthBar = player2HealthBar;
             }
         }

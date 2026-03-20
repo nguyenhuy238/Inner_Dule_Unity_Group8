@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 7005527226333867696}
   - component: {fileID: 447673200421180434}
   - component: {fileID: 4792576214740402402}
+  - component: {fileID: 4986842425331569454}
   m_Layer: 8
   m_Name: Char_Emotion
   m_TagString: Untagged
@@ -30,7 +31,7 @@ Transform:
   m_GameObject: {fileID: 764730707852355852}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.16, y: 0.06, z: 25.281307}
+  m_LocalPosition: {x: -0.16, y: -0.85, z: 25.281307}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -95,18 +96,18 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: -0.01887083, y: -0.2187078}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 6.27, y: 9.41}
+    oldSize: {x: 7.36, y: 11.04}
     newSize: {x: 6.27, y: 9.41}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 6.27, y: 9.41}
+  m_Size: {x: 5.971938, y: 5.037415}
   m_EdgeRadius: 0
 --- !u!95 &7005527226333867696
 Animator:
@@ -169,8 +170,8 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: b55708fcfa49d1647be347810e560327, type: 3}
+  m_SortingOrder: 2
+  m_Sprite: {fileID: 21300000, guid: 4a4696715993d3f4faadcf633c0902bc, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -197,6 +198,7 @@ MonoBehaviour:
   playerID: 1
   moveSpeedMultiplier: 1
   jumpForceMultiplier: 1
+  damageMultiplier: 1
   normalAttackPoint: {fileID: 0}
   attack1Point: {fileID: 0}
   attack2Point: {fileID: 0}
@@ -211,3 +213,20 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   healthBar: {fileID: 0}
+--- !u!114 &4986842425331569454
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 764730707852355852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4d64a70d29e30e4491066183da0c74b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  skill1Delay: 0.2
+  skill2Duration: 1
+  skill2DamageInterval: 0.2
+  skill3BuffDuration: 5
+  skill3DamageMultiplier: 1.5

@@ -22,9 +22,9 @@ MonoBehaviour:
   maxHealth: 100
   moveSpeed: 5
   defense: 5
-  jumpForce: 12
+  jumpForce: 15
   airControlMultiplier: 0.8
-  normalAttackDamage: 8
+  normalAttackDamage: 5
   normalAttackRange: 0.8
   normalAttackCooldown: 0.35
   attackDamage: 10
@@ -34,13 +34,13 @@ MonoBehaviour:
   dashDuration: 0.2
   attack1Damage: 10
   attack1Range: 1.2
-  attack1Cooldown: 0.5
-  attack2Damage: 15
+  attack1Cooldown: 1
+  attack2Damage: 10
   attack2Range: 1.5
-  attack2Cooldown: 1
+  attack2Cooldown: 2
   attack3Damage: 20
   attack3Range: 1.8
-  attack3Cooldown: 1.5
+  attack3Cooldown: 5
   projectilePrefab: {fileID: 8866539524337711559, guid: 80d09644c9670f94eaa23dfbd4e0a49a, type: 3}
   arrowSkill1Prefab: {fileID: 1003014274181348562, guid: 6de68eb4b94798d40922879ecc3c115a, type: 3}
   arrowSkill2Prefab: {fileID: 4713698062760516982, guid: 5a840b0625eb58140be0e443c2c067a6, type: 3}
