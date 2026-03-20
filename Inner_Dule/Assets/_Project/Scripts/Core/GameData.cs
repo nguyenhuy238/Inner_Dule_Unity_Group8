@@ -19,6 +19,7 @@ namespace InnerDuel.Core
         // Match results
         public static int winnerPlayerID = 0; // 1 for P1, 2 for P2
         public static string winnerName = "";
+        public static Sprite winnerPortrait = null;
 
         // Scene names (to avoid magic strings)
         public const string MainMenuScene = "MainMenuScene";
@@ -35,6 +36,7 @@ namespace InnerDuel.Core
             selectedMap = null;
             winnerPlayerID = 0;
             winnerName = "";
+            winnerPortrait = null;
         }
     }
 }

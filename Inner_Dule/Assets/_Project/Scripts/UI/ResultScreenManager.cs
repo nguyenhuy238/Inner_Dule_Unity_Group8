@@ -25,6 +25,26 @@ namespace InnerDuel.UI
                     winnerText.text += $"\n({GameData.winnerName})";
                 }
             }
+
+            if (winnerPortrait)
+            {
+                Sprite portrait = GameData.winnerPortrait;
+
+                if (portrait == null)
+                {
+                    if (GameData.winnerPlayerID == 1 && GameData.player1Character != null)
+                    {
+                        portrait = GameData.player1Character.portrait;
+                    }
+                    else if (GameData.winnerPlayerID == 2 && GameData.player2Character != null)
+                    {
+                        portrait = GameData.player2Character.portrait;
+                    }
+                }
+
+                winnerPortrait.sprite = portrait;
+                winnerPortrait.enabled = portrait != null;
+            }
         }
 
         public void Rematch()
