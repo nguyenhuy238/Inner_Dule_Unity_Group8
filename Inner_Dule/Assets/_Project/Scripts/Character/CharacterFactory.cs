@@ -249,6 +249,7 @@ namespace InnerDuel.Characters
                     data.dashDuration = 0.25f;
                     data.mainColor = Color.white;
                     data.effectColor = Color.cyan;
+                    data.canBlock = true;
                     data.canDash = true;
                     break;
                 
