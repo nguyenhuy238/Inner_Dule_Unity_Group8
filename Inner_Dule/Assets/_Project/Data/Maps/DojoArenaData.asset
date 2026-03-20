@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mapName: Dojo Arena
   previewImage: {fileID: 21300000, guid: 63528d0d9d1a1994aa8111910079a101, type: 3}
-  mapPrefab: {fileID: 7080282037091653643, guid: 4faa8e99ed0be9049869218163e7731b, type: 3}
+  mapPrefab: {fileID: 4025176807103578382, guid: 7f48fe9874497d14583f52ca3a1ccb2a, type: 3}
   description: Classic martial arts dojo
