@@ -137,6 +137,7 @@ GameObject:
   - component: {fileID: 48369323853611045}
   - component: {fileID: 3509305136896637838}
   - component: {fileID: 1191229199184784977}
+  - component: {fileID: 989577084951596014}
   m_Layer: 8
   m_Name: Discipline_Character
   m_TagString: Player1
@@ -153,8 +154,8 @@ Transform:
   m_GameObject: {fileID: 8824787756666514057}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -21.37, y: 2.74, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 1}
+  m_LocalPosition: {x: -21.29, y: 2.32, z: 0}
+  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6463427981581286706}
@@ -279,6 +280,7 @@ MonoBehaviour:
   playerID: 1
   moveSpeedMultiplier: 1
   jumpForceMultiplier: 1
+  damageMultiplier: 1
   normalAttackPoint: {fileID: 0}
   attack1Point: {fileID: 0}
   attack2Point: {fileID: 0}
@@ -292,9 +294,19 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
-  groundCheck: {fileID: 0}
-  groundCheckRadius: 0.2
-  groundLayer:
+  healthBar: {fileID: 0}
+  hitStunDuration: 0.25
+--- !u!61 &989577084951596014
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8824787756666514057}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
   m_ExcludeLayers:
