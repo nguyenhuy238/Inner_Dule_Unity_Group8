@@ -117,6 +117,9 @@ namespace InnerDuel
             stateTimer = 0f;
             winner = null;
             currentState = GameState.Intro;
+            GameData.winnerPlayerID = 0;
+            GameData.winnerName = "";
+            GameData.winnerPortrait = null;
 
             // Ensure we have current scene references if they were lost during transition
             if (uiManager == null) uiManager = FindObjectOfType<UIManager>();
@@ -319,6 +322,7 @@ namespace InnerDuel
                 winner = player2;
                 GameData.winnerPlayerID = 2;
                 GameData.winnerName = player2.characterData != null ? player2.characterData.characterName : "P2";
+                GameData.winnerPortrait = player2.characterData != null ? player2.characterData.portrait : null;
                 Debug.Log("Player 1 Died! Winner: Player 2");
             }
             else
@@ -326,6 +330,7 @@ namespace InnerDuel
                 winner = player1;
                 GameData.winnerPlayerID = 1;
                 GameData.winnerName = player1.characterData != null ? player1.characterData.characterName : "P1";
+                GameData.winnerPortrait = player1.characterData != null ? player1.characterData.portrait : null;
                 Debug.Log("Player 2 Died! Winner: Player 1");
             }
         }
