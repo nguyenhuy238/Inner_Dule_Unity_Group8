@@ -41,11 +41,23 @@ MonoBehaviour:
   attack3Damage: 35
   attack3Range: 2.5
   attack3Cooldown: 1.8
+  attack1Damage: 20
+  attack1Range: 1.5
+  attack1Cooldown: 0.6
+  attack2Damage: 25
+  attack2Range: 2
+  attack2Cooldown: 1.2
+  attack3Damage: 35
+  attack3Range: 2.5
+  attack3Cooldown: 1.8
   projectilePrefab: {fileID: 0}
   arrowSkill1Prefab: {fileID: 0}
   arrowSkill2Prefab: {fileID: 0}
   arrowSkill3Prefab: {fileID: 0}
   projectileSpeed: 10
+  attack3LeapForce: {x: 6, y: 4}
+  attack3ControlLock: 0.3
+  mainColor: {r: 1, g: 0.4, b: 0.4, a: 1}
   attack3LeapForce: {x: 6, y: 4}
   attack3ControlLock: 0.3
   mainColor: {r: 1, g: 0.4, b: 0.4, a: 1}
@@ -55,5 +67,7 @@ MonoBehaviour:
   canPlaceTraps: 0
   hasLifeSteal: 0
   canCounterAttack: 0
+  hasBerserkMode: 1
+  hasRageMode: 1
   hasBerserkMode: 1
   hasRageMode: 1
