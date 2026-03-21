@@ -51,6 +51,13 @@ namespace InnerDuel.Audio
         public AudioClip[] dashSounds;
         public AudioClip[] deathSounds;
         public AudioClip[] victorySounds;
+
+        [Header("UI SFX")]
+        [Tooltip("Clip click mặc định cho UI Button/phím chọn menu.")]
+        public AudioClip uiClickSound;
+        [Range(0f, 2f)] public float uiClickVolume = 1f;
+        [Range(0.5f, 1.5f)] public float uiClickPitchMin = 0.98f;
+        [Range(0.5f, 1.5f)] public float uiClickPitchMax = 1.02f;
         
         [Header("Audio Mixer")]
         public AudioMixer audioMixer;
@@ -191,6 +198,27 @@ namespace InnerDuel.Audio
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            if (scene.name == GameData.MainGameScene)
+            {
+                AudioClip selectedMapClip = GameData.selectedMap != null ? GameData.selectedMap.mapBgmClip : null;
+                bool mapBgmAlreadyPlaying =
+                    selectedMapClip != null &&
+                    musicSource != null &&
+                    musicSource.isPlaying &&
+                    musicSource.clip == selectedMapClip;
+
+                if (mapBgmAlreadyPlaying)
+                {
+                    return;
+                }
+
+                // MainGameScene uses map-specific BGM from GameManager.
+                // Stop current scene/system BGM here to prevent overlap during transition.
+                StopMusic();
+                StopAllSFX();
+                return;
+            }
+
             PlaySceneBGM(scene.name);
         }
 
@@ -531,6 +559,32 @@ namespace InnerDuel.Audio
             PlayClipOnSfxSource(clip, Mathf.Clamp01(volume), 1f, 1f);
         }
 
+        public void SetUIClickSound(AudioClip clip, bool overrideExisting = false)
+        {
+            if (clip == null) return;
+            if (uiClickSound == null || overrideExisting)
+            {
+                uiClickSound = clip;
+            }
+        }
+
+        public void PlayUIClick(float volumeMultiplier = 1f)
+        {
+            AudioClip clip = uiClickSound;
+            if (clip == null)
+            {
+                clip = GetRandomClip(hitSounds) ?? GetRandomClip(blockSounds) ?? GetRandomClip(dashSounds);
+            }
+
+            if (clip == null) return;
+
+            float pitchMin = Mathf.Min(uiClickPitchMin, uiClickPitchMax);
+            float pitchMax = Mathf.Max(uiClickPitchMin, uiClickPitchMax);
+            float finalVolume = Mathf.Clamp01(uiClickVolume * Mathf.Max(0f, volumeMultiplier));
+
+            PlayClipOnSfxSource(clip, finalVolume, pitchMin, pitchMax);
+        }
+
         public void PlayVoiceLine(AudioClip clip, float volume = 1f)
         {
             EnsureAudioReady();
@@ -561,9 +615,18 @@ namespace InnerDuel.Audio
         public void StopMusic()
         {
             EnsureAudioReady();
+
+            if (musicFadeCoroutine != null)
+            {
+                StopCoroutine(musicFadeCoroutine);
+                musicFadeCoroutine = null;
+            }
+
             if (musicSource != null)
             {
                 musicSource.Stop();
+                musicSource.clip = null;
+                musicSource.pitch = 1f;
             }
         }
 

@@ -141,6 +141,7 @@ namespace InnerDuel
 
             // 1. Spawn Map
             SpawnMap();
+            SyncMainGameMusic();
 
             // 2. Setup Players
             // Prefer using players already placed in the scene as placeholders/spawn points
@@ -321,22 +322,7 @@ namespace InnerDuel
                 uiManager.ShowGameplayUI();
             }
 
-            if (AudioManager.Instance != null)
-            {
-                if (currentMapData != null && currentMapData.mapBgmClip != null)
-                {
-                    AudioManager.Instance.PlayBGMClip(currentMapData.mapBgmClip, currentMapData.mapBgmVolume, true);
-                }
-                else
-                {
-                    AudioManager.Instance.PlaySceneBGM(GameData.MainGameScene);
-                    if (AudioManager.Instance.musicSource == null || AudioManager.Instance.musicSource.clip == null)
-                    {
-                        AudioManager.Instance.PlayBGM(0);
-                    }
-                }
-            }
-
+            EnsureMapBgmPlayingAtGameplayStart();
             UpdateCombatMusicIntensity();
         }
         
@@ -451,6 +437,38 @@ namespace InnerDuel
             float p2Ratio = player2.MaxHealth > 0f ? player2.CurrentHealth / player2.MaxHealth : 1f;
             float lowestRatio = Mathf.Clamp01(Mathf.Min(p1Ratio, p2Ratio));
             AudioManager.Instance.UpdateBGMIntensity(lowestRatio);
+        }
+
+        private void SyncMainGameMusic()
+        {
+            if (AudioManager.Instance == null) return;
+
+            // MainGameScene should only keep map BGM to avoid stacking with previous system music.
+            AudioManager.Instance.StopMusic();
+
+            if (currentMapData != null && currentMapData.mapBgmClip != null)
+            {
+                AudioManager.Instance.PlayBGMClip(currentMapData.mapBgmClip, currentMapData.mapBgmVolume, true, true);
+                return;
+            }
+
+            Debug.LogWarning("[GameManager] Current map has no BGM clip. Music remains stopped to prevent overlap.");
+        }
+
+        private void EnsureMapBgmPlayingAtGameplayStart()
+        {
+            if (AudioManager.Instance == null || currentMapData == null || currentMapData.mapBgmClip == null) return;
+
+            AudioSource musicSource = AudioManager.Instance.musicSource;
+            bool isMapBgmAlreadyPlaying =
+                musicSource != null &&
+                musicSource.isPlaying &&
+                musicSource.clip == currentMapData.mapBgmClip;
+
+            if (!isMapBgmAlreadyPlaying)
+            {
+                AudioManager.Instance.PlayBGMClip(currentMapData.mapBgmClip, currentMapData.mapBgmVolume, true, true);
+            }
         }
     }
 }

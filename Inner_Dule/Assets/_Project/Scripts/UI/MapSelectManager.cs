@@ -77,6 +77,7 @@ namespace InnerDuel.UI
             if (availableMaps.Count == 0) return;
             
             currentMapIndex = (currentMapIndex + direction + availableMaps.Count) % availableMaps.Count;
+            PlayUIClick();
             UpdateUI();
         }
 
@@ -85,6 +86,7 @@ namespace InnerDuel.UI
             if (index >= 0 && index < availableMaps.Count)
             {
                 currentMapIndex = index;
+                PlayUIClick();
                 UpdateUI();
             }
         }
@@ -95,6 +97,7 @@ namespace InnerDuel.UI
             if (index != -1)
             {
                 currentMapIndex = index;
+                PlayUIClick();
                 UpdateUI();
             }
         }
@@ -105,6 +108,7 @@ namespace InnerDuel.UI
             if (index != -1)
             {
                 currentMapIndex = index;
+                PlayUIClick();
                 UpdateUI();
             }
         }
@@ -124,13 +128,23 @@ namespace InnerDuel.UI
         {
             if (availableMaps.Count == 0) return;
             
+            PlayUIClick();
             GameData.selectedMap = availableMaps[currentMapIndex];
             SceneManager.LoadScene(GameData.CharacterSelectScene);
         }
 
         public void BackToMenu()
         {
+            PlayUIClick();
             SceneManager.LoadScene(GameData.MainMenuScene);
+        }
+
+        private void PlayUIClick()
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayUIClick();
+            }
         }
     }
 }

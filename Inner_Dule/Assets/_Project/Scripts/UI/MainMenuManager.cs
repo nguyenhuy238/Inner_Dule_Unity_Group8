@@ -54,6 +54,11 @@ namespace InnerDuel.UI
 
         private void SetupMenuAudio()
         {
+            if (AudioManager.Instance != null && clickSound != null)
+            {
+                AudioManager.Instance.SetUIClickSound(clickSound);
+            }
+
             if (menuMusic == null) menuMusic = hoverSound;
 
             if (AudioManager.Instance != null && menuMusic != null)
@@ -252,25 +257,20 @@ namespace InnerDuel.UI
         {
             if (hoverSound == null) return;
 
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlaySoundEffect(hoverSound, 0.8f);
-            }
-            else if (uiAudioSource)
-            {
-                uiAudioSource.PlayOneShot(hoverSound);
-            }
+            // Hover SFX should stay local to MainMenu scene (avoid carrying over via persistent AudioManager).
+            if (!uiAudioSource) uiAudioSource = GetComponent<AudioSource>();
+            if (!uiAudioSource) return;
+
+            uiAudioSource.PlayOneShot(hoverSound);
         }
 
         private void PlayClickSound()
         {
-            if (clickSound == null) return;
-
             if (AudioManager.Instance != null)
             {
-                AudioManager.Instance.PlaySoundEffect(clickSound, 1f);
+                AudioManager.Instance.PlayUIClick();
             }
-            else if (uiAudioSource)
+            else if (uiAudioSource && clickSound != null)
             {
                 uiAudioSource.PlayOneShot(clickSound);
             }

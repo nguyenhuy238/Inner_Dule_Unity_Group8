@@ -63,17 +63,28 @@ namespace InnerDuel.UI
 
         public void Rematch()
         {
+            PlayUIClick();
             SceneManager.LoadScene(GameData.LoadingScene);
         }
 
         public void CharacterSelect()
         {
+            PlayUIClick();
             SceneManager.LoadScene(GameData.CharacterSelectScene);
         }
 
         public void MainMenu()
         {
+            PlayUIClick();
             SceneManager.LoadScene(GameData.MainMenuScene);
+        }
+
+        private void PlayUIClick()
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayUIClick();
+            }
         }
     }
 }

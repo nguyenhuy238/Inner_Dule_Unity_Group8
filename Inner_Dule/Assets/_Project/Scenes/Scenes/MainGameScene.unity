@@ -401,7 +401,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: -1183493901
+  m_TextStyleHashCode: 93368250
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -528,8 +528,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 50, y: -15}
-  m_SizeDelta: {x: 221.05, y: 30}
+  m_AnchoredPosition: {x: 50, y: -37.5}
+  m_SizeDelta: {x: 310, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &402427432
 MonoBehaviour:
@@ -607,8 +607,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: e1e0f39530ef88045aba28df73317170, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -1709,8 +1709,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 50, y: -65}
-  m_SizeDelta: {x: 217.35, y: 30}
+  m_AnchoredPosition: {x: 50, y: -132.5}
+  m_SizeDelta: {x: 310, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &681012315
 MonoBehaviour:
@@ -1788,8 +1788,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: e1e0f39530ef88045aba28df73317170, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -3554,35 +3554,7 @@ MonoBehaviour:
   sfxSource: {fileID: 0}
   voiceSource: {fileID: 0}
   sceneBgmProfiles: []
-  characterActionSfxProfiles:
-  - characterType: 0
-    action: 3
-    clips:
-    - {fileID: 8300000, guid: 65ff7ad19244cc542a60abcfb921c25f, type: 3}
-    volumeScale: 2
-    pitchMin: 0
-    pitchMax: 0
-  - characterType: 1
-    action: 3
-    clips:
-    - {fileID: 8300000, guid: 65ff7ad19244cc542a60abcfb921c25f, type: 3}
-    volumeScale: 2
-    pitchMin: 0
-    pitchMax: 0
-  - characterType: 1
-    action: 8
-    clips:
-    - {fileID: 8300000, guid: e55e7d9dc6c1d0b4f921cc3e967e08e5, type: 3}
-    volumeScale: 2
-    pitchMin: 0
-    pitchMax: 0
-  - characterType: 0
-    action: 8
-    clips:
-    - {fileID: 8300000, guid: befa40696fab37d4e900af92a60df46c, type: 3}
-    volumeScale: 2
-    pitchMin: 0
-    pitchMax: 0
+  characterActionSfxProfiles: []
   bgmTracks:
   - {fileID: 8300000, guid: 34c4b64dacf8b4a458adf65f0cf22962, type: 3}
   - {fileID: 8300000, guid: 7aa6626348c16bf459bb43cbec126be0, type: 3}
@@ -3597,6 +3569,10 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 34c4b64dacf8b4a458adf65f0cf22962, type: 3}
   victorySounds:
   - {fileID: 8300000, guid: 7aa6626348c16bf459bb43cbec126be0, type: 3}
+  uiClickSound: {fileID: 8300000, guid: a0bfc38d15e438b4887a5587c85ff9ff, type: 3}
+  uiClickVolume: 1
+  uiClickPitchMin: 0.98
+  uiClickPitchMax: 1.02
   audioMixer: {fileID: 0}
   musicBaseVolume: 0.5
   sfxBaseVolume: 0.7
@@ -4140,8 +4116,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 50, y: -115}
-  m_SizeDelta: {x: 219.82, y: 30}
+  m_AnchoredPosition: {x: 50, y: -227.5}
+  m_SizeDelta: {x: 310, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2073918066
 MonoBehaviour:
@@ -4219,8 +4195,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: e1e0f39530ef88045aba28df73317170, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
