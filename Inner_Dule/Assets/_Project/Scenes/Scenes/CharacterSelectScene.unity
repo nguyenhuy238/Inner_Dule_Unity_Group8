@@ -1726,8 +1726,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   availableCharacters:
-  - {fileID: 11400000, guid: 569c5d0f809630540ad0e58cf94bd243, type: 2}
-  - {fileID: 11400000, guid: bd1630b32c6b3a0429ed48b9928407e1, type: 2}
+  - {fileID: 11400000, guid: f5722b806e4191941a86188fe7ea1402, type: 2}
+  - {fileID: 11400000, guid: d0ae284d29b4010429402f67ffd42121, type: 2}
   - {fileID: 11400000, guid: ba61b802cc5d39442b9600290e8bb691, type: 2}
   - {fileID: 11400000, guid: a4265c21ede6df243b9b908dc9e0b26d, type: 2}
   - {fileID: 11400000, guid: b616105a64d7ba64994a413b919e25d3, type: 2}

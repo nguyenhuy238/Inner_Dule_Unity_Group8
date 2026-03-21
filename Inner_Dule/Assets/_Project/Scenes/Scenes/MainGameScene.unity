@@ -3554,7 +3554,14 @@ MonoBehaviour:
   sfxSource: {fileID: 0}
   voiceSource: {fileID: 0}
   sceneBgmProfiles: []
-  characterActionSfxProfiles: []
+  characterActionSfxProfiles:
+  - characterType: 0
+    action: 3
+    clips:
+    - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
   bgmTracks:
   - {fileID: 8300000, guid: 34c4b64dacf8b4a458adf65f0cf22962, type: 3}
   - {fileID: 8300000, guid: 7aa6626348c16bf459bb43cbec126be0, type: 3}
