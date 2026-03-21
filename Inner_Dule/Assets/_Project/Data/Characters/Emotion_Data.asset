@@ -55,10 +55,10 @@ MonoBehaviour:
   arrowSkill2Prefab: {fileID: 0}
   arrowSkill3Prefab: {fileID: 0}
   projectileSpeed: 10
-  attack3LeapForce: {x: 6, y: 4}
+  attack3LeapForce: {x: 0, y: 0}
   attack3ControlLock: 0.3
   mainColor: {r: 1, g: 0.4, b: 0.4, a: 1}
-  attack3LeapForce: {x: 6, y: 4}
+  attack3LeapForce: {x: 0, y: 0}
   attack3ControlLock: 0.3
   mainColor: {r: 1, g: 0.4, b: 0.4, a: 1}
   effectColor: {r: 1, g: 0, b: 0, a: 1}

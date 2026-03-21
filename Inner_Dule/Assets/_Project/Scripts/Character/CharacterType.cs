@@ -80,6 +80,11 @@ namespace InnerDuel.Characters
         public float projectileSpeed = 15f;
         public Vector2 attack3LeapForce = new Vector2(5f, 5f); // For leap attacks
         public float attack3ControlLock = 0.2f;
+        
+        [Header("New Action Stats")]
+        public float skill3DashSpeed = 25f;
+        public float skill3DashDuration = 0.5f;
+        public float skill3Knockback = 10f;
 
         [Header("Visuals")]
         public Color mainColor = Color.white;

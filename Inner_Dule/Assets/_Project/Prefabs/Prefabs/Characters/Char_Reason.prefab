@@ -31,8 +31,8 @@ Transform:
   m_GameObject: {fileID: 764730707852355852}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.326, y: 0.134, z: 25.281307}
-  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
+  m_LocalPosition: {x: -0.3845, y: 0.1298, z: 25.281307}
+  m_LocalScale: {x: 0.27834, y: 0.30156, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -96,18 +96,18 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 1.5}
+  m_Offset: {x: -0.49508822, y: 0.2398789}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 9.42, y: 9.42}
+    oldSize: {x: 5.4, y: 5.4}
     newSize: {x: 9.42, y: 9.42}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 9.42, y: 7.92}
+  m_Size: {x: 5.7893486, y: 5.399758}
   m_EdgeRadius: 0
 --- !u!95 &7005527226333867696
 Animator:
@@ -171,7 +171,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 21300000, guid: e257095ad111d974cb563f5890b9694c, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 0c32e193e7f0f7643a23eab379682be2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -198,6 +198,7 @@ MonoBehaviour:
   playerID: 1
   moveSpeedMultiplier: 1
   jumpForceMultiplier: 1
+  damageMultiplier: 1
   normalAttackPoint: {fileID: 0}
   attack1Point: {fileID: 0}
   attack2Point: {fileID: 0}
@@ -212,6 +213,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   healthBar: {fileID: 0}
+  hitStunDuration: 0.25
 --- !u!114 &1525528786553178201
 MonoBehaviour:
   m_ObjectHideFlags: 0
