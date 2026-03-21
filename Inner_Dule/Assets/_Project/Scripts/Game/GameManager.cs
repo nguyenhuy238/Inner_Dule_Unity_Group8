@@ -4,6 +4,7 @@ using InnerDuel.Characters;
 using InnerDuel.UI;
 using InnerDuel.Camera;
 using InnerDuel.Core;
+using InnerDuel.Audio;
 
 namespace InnerDuel
 {
@@ -35,6 +36,7 @@ namespace InnerDuel
         
         private float stateTimer = 0f;
         private InnerCharacterController winner;
+        private MapData currentMapData;
         
         public enum GameState
         {
@@ -69,6 +71,11 @@ namespace InnerDuel
         private void OnDisable()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeHealthAudioHooks();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -110,6 +117,8 @@ namespace InnerDuel
         public void InitializeGame()
         {
             Debug.Log("[InnerDuel] InitializeGame started.");
+
+            UnsubscribeHealthAudioHooks();
 
             // Reset match state for fresh start or rematch
             deathSequenceStarted = false;
@@ -210,6 +219,8 @@ namespace InnerDuel
             }
 
             StartIntro();
+            SubscribeHealthAudioHooks();
+            UpdateCombatMusicIntensity();
         }
 
         private void SpawnMap()
@@ -224,6 +235,7 @@ namespace InnerDuel
             }
 
             MapData mapToSpawn = GameData.selectedMap != null ? GameData.selectedMap : fallbackMap;
+            currentMapData = mapToSpawn;
 
             if (mapToSpawn != null && mapToSpawn.mapPrefab != null)
             {
@@ -308,6 +320,24 @@ namespace InnerDuel
                 uiManager.HideIntroText();
                 uiManager.ShowGameplayUI();
             }
+
+            if (AudioManager.Instance != null)
+            {
+                if (currentMapData != null && currentMapData.mapBgmClip != null)
+                {
+                    AudioManager.Instance.PlayBGMClip(currentMapData.mapBgmClip, currentMapData.mapBgmVolume, true);
+                }
+                else
+                {
+                    AudioManager.Instance.PlaySceneBGM(GameData.MainGameScene);
+                    if (AudioManager.Instance.musicSource == null || AudioManager.Instance.musicSource.clip == null)
+                    {
+                        AudioManager.Instance.PlayBGM(0);
+                    }
+                }
+            }
+
+            UpdateCombatMusicIntensity();
         }
         
         public void OnCharacterDied(InnerCharacterController character)
@@ -332,6 +362,11 @@ namespace InnerDuel
                 GameData.winnerName = player1.characterData != null ? player1.characterData.characterName : "P1";
                 GameData.winnerPortrait = player1.characterData != null ? player1.characterData.portrait : null;
                 Debug.Log("Player 2 Died! Winner: Player 1");
+            }
+
+            if (AudioManager.Instance != null && winner != null && winner.characterData != null)
+            {
+                AudioManager.Instance.PlayCharacterActionSfx(winner.characterData.type, CharacterAudioAction.Victory);
             }
         }
 
@@ -372,6 +407,50 @@ namespace InnerDuel
                 player1 = controllers[0];
                 player2 = controllers[1];
             }
+        }
+
+        private void SubscribeHealthAudioHooks()
+        {
+            if (player1 != null)
+            {
+                player1.OnHealthChanged -= OnPlayerHealthChanged;
+                player1.OnHealthChanged += OnPlayerHealthChanged;
+            }
+
+            if (player2 != null)
+            {
+                player2.OnHealthChanged -= OnPlayerHealthChanged;
+                player2.OnHealthChanged += OnPlayerHealthChanged;
+            }
+        }
+
+        private void UnsubscribeHealthAudioHooks()
+        {
+            if (player1 != null)
+            {
+                player1.OnHealthChanged -= OnPlayerHealthChanged;
+            }
+
+            if (player2 != null)
+            {
+                player2.OnHealthChanged -= OnPlayerHealthChanged;
+            }
+        }
+
+        private void OnPlayerHealthChanged(float currentHealth, float maxHealth)
+        {
+            UpdateCombatMusicIntensity();
+        }
+
+        private void UpdateCombatMusicIntensity()
+        {
+            if (AudioManager.Instance == null || player1 == null || player2 == null) return;
+            if (currentMapData != null && currentMapData.mapBgmClip != null) return;
+
+            float p1Ratio = player1.MaxHealth > 0f ? player1.CurrentHealth / player1.MaxHealth : 1f;
+            float p2Ratio = player2.MaxHealth > 0f ? player2.CurrentHealth / player2.MaxHealth : 1f;
+            float lowestRatio = Mathf.Clamp01(Mathf.Min(p1Ratio, p2Ratio));
+            AudioManager.Instance.UpdateBGMIntensity(lowestRatio);
         }
     }
 }

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 using InnerDuel.Core;
+using InnerDuel.Audio;
 
 namespace InnerDuel.UI
 {
@@ -25,6 +26,7 @@ namespace InnerDuel.UI
             isPaused = true;
             Time.timeScale = 0f;
             if (pauseMenuPanel) pauseMenuPanel.SetActive(true);
+            if (AudioManager.Instance != null) AudioManager.Instance.PauseMusic();
         }
 
         public void Resume()
@@ -32,6 +34,7 @@ namespace InnerDuel.UI
             isPaused = false;
             Time.timeScale = 1f;
             if (pauseMenuPanel) pauseMenuPanel.SetActive(false);
+            if (AudioManager.Instance != null) AudioManager.Instance.ResumeMusic();
         }
 
         public void RestartMatch()

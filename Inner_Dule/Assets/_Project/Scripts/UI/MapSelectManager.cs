@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 using TMPro;
 using System.Collections.Generic;
 using InnerDuel.Core;
+using InnerDuel.Audio;
 
 namespace InnerDuel.UI
 {
@@ -23,8 +24,12 @@ namespace InnerDuel.UI
         [Header("Navigation")]
         private int currentMapIndex = 0;
 
+        [Header("Audio")]
+        public AudioClip sceneMusic;
+
         private void Start()
         {
+            SetupSceneAudio();
             UpdateUI();
             
             if (confirmButton != null)
@@ -32,6 +37,15 @@ namespace InnerDuel.UI
             
             if (backButton != null)
                 backButton.onClick.AddListener(BackToMenu);
+        }
+
+        private void SetupSceneAudio()
+        {
+            if (AudioManager.Instance == null || sceneMusic == null) return;
+
+            string sceneName = SceneManager.GetActiveScene().name;
+            AudioManager.Instance.RegisterSceneMusic(sceneName, sceneMusic);
+            AudioManager.Instance.PlaySceneBGM(sceneName);
         }
 
         private void Update()

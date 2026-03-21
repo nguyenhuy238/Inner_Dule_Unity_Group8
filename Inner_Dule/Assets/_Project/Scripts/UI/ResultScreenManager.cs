@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using InnerDuel.Core;
+using InnerDuel.Audio;
 
 namespace InnerDuel.UI
 {
@@ -12,8 +13,12 @@ namespace InnerDuel.UI
         public TextMeshProUGUI winnerText;
         public Image winnerPortrait;
         
+        [Header("Audio")]
+        public AudioClip sceneMusic;
+
         private void Start()
         {
+            SetupSceneAudio();
             if (winnerText)
             {
                 winnerText.text = GameData.winnerPlayerID != 0 ? 
@@ -45,6 +50,15 @@ namespace InnerDuel.UI
                 winnerPortrait.sprite = portrait;
                 winnerPortrait.enabled = portrait != null;
             }
+        }
+
+        private void SetupSceneAudio()
+        {
+            if (AudioManager.Instance == null || sceneMusic == null) return;
+
+            string sceneName = SceneManager.GetActiveScene().name;
+            AudioManager.Instance.RegisterSceneMusic(sceneName, sceneMusic);
+            AudioManager.Instance.PlaySceneBGM(sceneName);
         }
 
         public void Rematch()

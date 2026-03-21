@@ -6,6 +6,7 @@ using TMPro;
 using System.Collections.Generic;
 using InnerDuel.Core;
 using InnerDuel.Characters;
+using InnerDuel.Audio;
 
 namespace InnerDuel.UI
 {
@@ -30,9 +31,22 @@ namespace InnerDuel.UI
         private bool p1Confirmed = false;
         private bool p2Confirmed = false;
 
+        [Header("Audio")]
+        public AudioClip sceneMusic;
+
         private void Start()
         {
+            SetupSceneAudio();
             UpdateUI();
+        }
+
+        private void SetupSceneAudio()
+        {
+            if (AudioManager.Instance == null || sceneMusic == null) return;
+
+            string sceneName = SceneManager.GetActiveScene().name;
+            AudioManager.Instance.RegisterSceneMusic(sceneName, sceneMusic);
+            AudioManager.Instance.PlaySceneBGM(sceneName);
         }
 
         private void Update()

@@ -3,12 +3,19 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 using InnerDuel.Core;
+using InnerDuel.Audio;
 using System.Collections.Generic;
 
 namespace InnerDuel.UI
 {
     public class MainMenuManager : MonoBehaviour
     {
+        private const string MasterVolumeKey = "MasterVolume";
+        private const string MusicVolumeKey = "MusicVolume";
+        private const string SfxVolumeKey = "SFXVolume";
+        private const string ResolutionIndexKey = "ResolutionIndex";
+        private const string FullscreenKey = "Fullscreen";
+
         [Header("Menu Panels")]
         public GameObject mainMenuPanel;
         public GameObject optionsPanel;
@@ -25,13 +32,36 @@ namespace InnerDuel.UI
         public AudioSource uiAudioSource;
         public AudioClip hoverSound;
         public AudioClip clickSound;
+        public AudioClip menuMusic;
 
         private Resolution[] resolutions;
 
         private void Start()
         {
+            SetupMenuAudio();
             InitializeOptions();
-            ShowMainMenu();
+            SetPanelState(true, false, false, false);
+        }
+
+        private void OnDestroy()
+        {
+            if (masterVolumeSlider) masterVolumeSlider.onValueChanged.RemoveListener(SetMasterVolume);
+            if (musicVolumeSlider) musicVolumeSlider.onValueChanged.RemoveListener(SetMusicVolume);
+            if (sfxVolumeSlider) sfxVolumeSlider.onValueChanged.RemoveListener(SetSFXVolume);
+            if (resolutionDropdown) resolutionDropdown.onValueChanged.RemoveListener(SetResolution);
+            if (fullscreenToggle) fullscreenToggle.onValueChanged.RemoveListener(SetFullscreen);
+        }
+
+        private void SetupMenuAudio()
+        {
+            if (menuMusic == null) menuMusic = hoverSound;
+
+            if (AudioManager.Instance != null && menuMusic != null)
+            {
+                string sceneName = SceneManager.GetActiveScene().name;
+                AudioManager.Instance.RegisterSceneMusic(sceneName, menuMusic);
+                AudioManager.Instance.PlaySceneBGM(sceneName, true);
+            }
         }
 
         #region Navigation Logic
@@ -44,24 +74,17 @@ namespace InnerDuel.UI
 
         public void ShowMainMenu()
         {
-            PlayClickSound();
-            if (mainMenuPanel) mainMenuPanel.SetActive(true);
-            if (optionsPanel) optionsPanel.SetActive(false);
-            if (creditsPanel) creditsPanel.SetActive(false);
+            SetPanelState(true, false, false, true);
         }
 
         public void ShowOptions()
         {
-            PlayClickSound();
-            if (mainMenuPanel) mainMenuPanel.SetActive(false);
-            if (optionsPanel) optionsPanel.SetActive(true);
+            SetPanelState(false, true, false, true);
         }
 
         public void ShowCredits()
         {
-            PlayClickSound();
-            if (mainMenuPanel) mainMenuPanel.SetActive(false);
-            if (creditsPanel) creditsPanel.SetActive(true);
+            SetPanelState(false, false, true, true);
         }
 
         public void QuitGame()
@@ -81,90 +104,144 @@ namespace InnerDuel.UI
 
         private void InitializeOptions()
         {
+            ResolveOptionsReferences();
+
             // Volume initialization
+            float defaultMusic = AudioManager.Instance != null ? AudioManager.Instance.musicBaseVolume : 1f;
+            float defaultSfx = AudioManager.Instance != null ? AudioManager.Instance.sfxBaseVolume : 1f;
+
+            float masterVolume = PlayerPrefs.GetFloat(MasterVolumeKey, 1f);
+            float musicVolume = PlayerPrefs.GetFloat(MusicVolumeKey, defaultMusic);
+            float sfxVolume = PlayerPrefs.GetFloat(SfxVolumeKey, defaultSfx);
+
             if (masterVolumeSlider)
             {
-                masterVolumeSlider.value = PlayerPrefs.GetFloat("MasterVolume", 1f);
+                masterVolumeSlider.SetValueWithoutNotify(masterVolume);
+                masterVolumeSlider.onValueChanged.RemoveListener(SetMasterVolume);
                 masterVolumeSlider.onValueChanged.AddListener(SetMasterVolume);
             }
             
             if (musicVolumeSlider)
             {
-                musicVolumeSlider.value = PlayerPrefs.GetFloat("MusicVolume", 1f);
+                musicVolumeSlider.SetValueWithoutNotify(musicVolume);
+                musicVolumeSlider.onValueChanged.RemoveListener(SetMusicVolume);
                 musicVolumeSlider.onValueChanged.AddListener(SetMusicVolume);
             }
 
             if (sfxVolumeSlider)
             {
-                sfxVolumeSlider.value = PlayerPrefs.GetFloat("SFXVolume", 1f);
+                sfxVolumeSlider.SetValueWithoutNotify(sfxVolume);
+                sfxVolumeSlider.onValueChanged.RemoveListener(SetSFXVolume);
                 sfxVolumeSlider.onValueChanged.AddListener(SetSFXVolume);
+            }
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.SetMasterVolume(masterVolume, false);
+                AudioManager.Instance.SetMusicVolume(musicVolume, false);
+                AudioManager.Instance.SetSFXVolume(sfxVolume, false);
             }
 
             // Resolution initialization
             if (resolutionDropdown)
             {
                 resolutions = Screen.resolutions;
-                resolutionDropdown.ClearOptions();
-
-                List<string> options = new List<string>();
-                int currentResolutionIndex = 0;
-
-                for (int i = 0; i < resolutions.Length; i++)
+                if (resolutions != null && resolutions.Length > 0)
                 {
-                    string option = resolutions[i].width + " x " + resolutions[i].height;
-                    options.Add(option);
+                    resolutionDropdown.ClearOptions();
 
-                    if (resolutions[i].width == Screen.currentResolution.width &&
-                        resolutions[i].height == Screen.currentResolution.height)
+                    List<string> options = new List<string>();
+                    int currentResolutionIndex = 0;
+
+                    for (int i = 0; i < resolutions.Length; i++)
                     {
-                        currentResolutionIndex = i;
-                    }
-                }
+                        string option = resolutions[i].width + " x " + resolutions[i].height;
+                        options.Add(option);
 
-                resolutionDropdown.AddOptions(options);
-                resolutionDropdown.value = PlayerPrefs.GetInt("ResolutionIndex", currentResolutionIndex);
-                resolutionDropdown.RefreshShownValue();
-                resolutionDropdown.onValueChanged.AddListener(SetResolution);
+                        if (resolutions[i].width == Screen.currentResolution.width &&
+                            resolutions[i].height == Screen.currentResolution.height)
+                        {
+                            currentResolutionIndex = i;
+                        }
+                    }
+
+                    resolutionDropdown.AddOptions(options);
+                    int savedResolutionIndex = Mathf.Clamp(
+                        PlayerPrefs.GetInt(ResolutionIndexKey, currentResolutionIndex),
+                        0,
+                        resolutions.Length - 1
+                    );
+                    resolutionDropdown.SetValueWithoutNotify(savedResolutionIndex);
+                    resolutionDropdown.onValueChanged.RemoveListener(SetResolution);
+                    resolutionDropdown.onValueChanged.AddListener(SetResolution);
+                    SetResolution(savedResolutionIndex);
+                    resolutionDropdown.RefreshShownValue();
+                }
             }
 
             // Fullscreen initialization
+            bool isFullscreen = PlayerPrefs.GetInt(FullscreenKey, Screen.fullScreen ? 1 : 0) == 1;
             if (fullscreenToggle)
             {
-                fullscreenToggle.isOn = Screen.fullScreen;
+                fullscreenToggle.SetIsOnWithoutNotify(isFullscreen);
+                fullscreenToggle.onValueChanged.RemoveListener(SetFullscreen);
                 fullscreenToggle.onValueChanged.AddListener(SetFullscreen);
             }
+
+            SetFullscreen(isFullscreen);
         }
 
         public void SetMasterVolume(float volume)
         {
-            PlayerPrefs.SetFloat("MasterVolume", volume);
-            // Add actual audio mixer logic here if available
-            Debug.Log($"Master Volume set to: {volume}");
+            float clampedVolume = Mathf.Clamp01(volume);
+            PlayerPrefs.SetFloat(MasterVolumeKey, clampedVolume);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.SetMasterVolume(clampedVolume);
+            }
+            Debug.Log($"Master Volume set to: {clampedVolume}");
         }
 
         public void SetMusicVolume(float volume)
         {
-            PlayerPrefs.SetFloat("MusicVolume", volume);
-            Debug.Log($"Music Volume set to: {volume}");
+            float clampedVolume = Mathf.Clamp01(volume);
+            PlayerPrefs.SetFloat(MusicVolumeKey, clampedVolume);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.SetMusicVolume(clampedVolume);
+            }
+            Debug.Log($"Music Volume set to: {clampedVolume}");
         }
 
         public void SetSFXVolume(float volume)
         {
-            PlayerPrefs.SetFloat("SFXVolume", volume);
-            Debug.Log($"SFX Volume set to: {volume}");
+            float clampedVolume = Mathf.Clamp01(volume);
+            PlayerPrefs.SetFloat(SfxVolumeKey, clampedVolume);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.SetSFXVolume(clampedVolume);
+            }
+            Debug.Log($"SFX Volume set to: {clampedVolume}");
         }
 
         public void SetResolution(int resolutionIndex)
         {
+            if (resolutions == null || resolutions.Length == 0)
+            {
+                resolutions = Screen.resolutions;
+                if (resolutions == null || resolutions.Length == 0) return;
+            }
+
+            resolutionIndex = Mathf.Clamp(resolutionIndex, 0, resolutions.Length - 1);
             Resolution resolution = resolutions[resolutionIndex];
             Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreen);
-            PlayerPrefs.SetInt("ResolutionIndex", resolutionIndex);
+            PlayerPrefs.SetInt(ResolutionIndexKey, resolutionIndex);
         }
 
         public void SetFullscreen(bool isFullscreen)
         {
             Screen.fullScreen = isFullscreen;
-            PlayerPrefs.SetInt("Fullscreen", isFullscreen ? 1 : 0);
+            PlayerPrefs.SetInt(FullscreenKey, isFullscreen ? 1 : 0);
         }
 
         #endregion
@@ -173,7 +250,13 @@ namespace InnerDuel.UI
 
         public void PlayHoverSound()
         {
-            if (uiAudioSource && hoverSound)
+            if (hoverSound == null) return;
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySoundEffect(hoverSound, 0.8f);
+            }
+            else if (uiAudioSource)
             {
                 uiAudioSource.PlayOneShot(hoverSound);
             }
@@ -181,9 +264,46 @@ namespace InnerDuel.UI
 
         private void PlayClickSound()
         {
-            if (uiAudioSource && clickSound)
+            if (clickSound == null) return;
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySoundEffect(clickSound, 1f);
+            }
+            else if (uiAudioSource)
             {
                 uiAudioSource.PlayOneShot(clickSound);
+            }
+        }
+
+        private void SetPanelState(bool showMain, bool showOptions, bool showCredits, bool playClick)
+        {
+            if (playClick) PlayClickSound();
+            if (mainMenuPanel) mainMenuPanel.SetActive(showMain);
+            if (optionsPanel) optionsPanel.SetActive(showOptions);
+            if (creditsPanel) creditsPanel.SetActive(showCredits);
+        }
+
+        private void ResolveOptionsReferences()
+        {
+            if (!optionsPanel) return;
+
+            if (!masterVolumeSlider)
+            {
+                Transform master = optionsPanel.transform.Find("MasterVolumeSlider");
+                if (master) masterVolumeSlider = master.GetComponent<Slider>();
+            }
+
+            if (!musicVolumeSlider)
+            {
+                Transform music = optionsPanel.transform.Find("MusicVolumeSlider");
+                if (music) musicVolumeSlider = music.GetComponent<Slider>();
+            }
+
+            if (!sfxVolumeSlider)
+            {
+                Transform sfx = optionsPanel.transform.Find("SFXVolumeSlider");
+                if (sfx) sfxVolumeSlider = sfx.GetComponent<Slider>();
             }
         }
 

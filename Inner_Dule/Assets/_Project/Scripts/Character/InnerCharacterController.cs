@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using InnerDuel;
 using InnerDuel.Input;
+using InnerDuel.Audio;
 using System.Collections;
 using System;
 
@@ -106,6 +107,10 @@ namespace InnerDuel.Characters
             animator = GetComponent<Animator>();
             spriteRenderer = GetComponent<SpriteRenderer>();
             statusEffectManager = GetComponent<InnerDuel.Core.StatusEffects.StatusEffectManager>();
+            if (GetComponent<CharacterAnimationAudioEvents>() == null)
+            {
+                gameObject.AddComponent<CharacterAnimationAudioEvents>();
+            }
             
             // Ensure StatusEffectManager
             if (statusEffectManager == null)
@@ -373,6 +378,7 @@ namespace InnerDuel.Characters
             if (isGrounded && !wasGrounded)
             {
                 Debug.Log($"[InnerDuel] Player {playerID} Landed.");
+                PlayCharacterAudio(CharacterAudioAction.Land, 0.8f);
             }
         }
 
@@ -393,6 +399,7 @@ namespace InnerDuel.Characters
                 
                 if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsGrounded, false);
                 Debug.Log($"[InnerDuel] Player {playerID} Jump Executed!");
+                PlayCharacterAudio(CharacterAudioAction.Jump, 0.9f);
             }
 
             // Control Lock (e.g. during Leap Attack)
@@ -493,6 +500,8 @@ namespace InnerDuel.Characters
                 animator.SetBool(animIsAttacking, true);
             }
 
+            PlayCharacterAudio(CharacterAudioAction.NormalAttack);
+
             // Melee Hitbox
             StartCoroutine(MeleeAttackRoutine(0.15f, normalAttackPoint, range, damage, attackToken));
 
@@ -567,6 +576,11 @@ namespace InnerDuel.Characters
                 animator.SetTrigger(triggerName);
                 animator.SetBool(animIsAttacking, true);
             }
+
+            CharacterAudioAction attackAction = CharacterAudioAction.Skill1;
+            if (attackIndex == 2) attackAction = CharacterAudioAction.Skill2;
+            else if (attackIndex == 3) attackAction = CharacterAudioAction.Skill3;
+            PlayCharacterAudio(attackAction);
 
             // Notify abilities
             foreach (var ability in abilities)
@@ -711,7 +725,10 @@ namespace InnerDuel.Characters
             float dashSpeed = characterData.moveSpeed * characterData.dashSpeedMultiplier;
             
             rb.velocity = new Vector2(dir * dashSpeed, 0f); // Horizontal Dash
-            
+
+            PlayCharacterAudio(CharacterAudioAction.DashStart);
+            foreach (var ability in abilities) ability.OnDash();
+
             StartCoroutine(ResetDashState(characterData.dashDuration));
         }
 
@@ -730,6 +747,7 @@ namespace InnerDuel.Characters
             rb.velocity = Vector2.zero;
             lastBlockStartTime = Time.time;
             if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsBlocking, true);
+            PlayCharacterAudio(CharacterAudioAction.BlockStart);
             foreach (var ability in abilities) ability.OnBlockStart();
         }
 
@@ -754,16 +772,15 @@ namespace InnerDuel.Characters
             // Re-check if still alive/valid after ability logic
             if (isDead) return;
 
-            // Play hit sound
-            if (InnerDuel.Audio.AudioManager.Instance != null)
-            {
-                InnerDuel.Audio.AudioManager.Instance.PlayRandomHitSound();
-            }
-
             // Block Logic
             if (isBlocking)
             {
                 damage *= 0.2f; // Block 80% damage
+                PlayCharacterAudio(CharacterAudioAction.BlockImpact, 0.9f);
+            }
+            else
+            {
+                PlayCharacterAudio(CharacterAudioAction.Hurt);
             }
             
             currentHealth = Mathf.Clamp(currentHealth - damage, 0f, MaxHealth);
@@ -822,6 +839,8 @@ namespace InnerDuel.Characters
             rb.velocity = Vector2.zero;
             
             if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsDead, true);
+            PlayCharacterAudio(CharacterAudioAction.Death);
+            foreach (var ability in abilities) ability.OnDie();
             
             GameManager.Instance.OnCharacterDied(this);
         }
@@ -840,6 +859,16 @@ namespace InnerDuel.Characters
             animator.SetFloat(animMoveSpeed, Mathf.Abs(rb.velocity.x));
             animator.SetFloat(animVerticalSpeed, rb.velocity.y);
             animator.SetBool(animIsGrounded, isGrounded);
+        }
+
+        private void PlayCharacterAudio(CharacterAudioAction action, float volumeMultiplier = 1f)
+        {
+            if (characterData == null) return;
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayCharacterActionSfx(characterData.type, action, volumeMultiplier);
+            }
         }
 
 #if UNITY_EDITOR
