@@ -21,6 +21,9 @@ namespace InnerDuel.Characters
         public float moveSpeedMultiplier = 1f;
         public float jumpForceMultiplier = 1f;
         public float damageMultiplier = 1f;
+        
+        [Header("Jump Settings")]
+        [SerializeField] private int maxJumpCount = 2;
 
         [Header("Combat References")]
         public Transform normalAttackPoint;
@@ -74,6 +77,7 @@ namespace InnerDuel.Characters
         // Input Buffers
         private Vector2 moveInput;
         private bool jumpQueued;
+        private int currentJumpCount = 0;
         
         // Timers
         private float normalAttackCooldown = 0f;
@@ -300,11 +304,11 @@ namespace InnerDuel.Characters
             bool jumpRequested = inputManager.GetButtonDown(playerID, "Jump");
             if (jumpRequested)
             {
-                // Removed isGrounded check for "infinite jumping" per user request
-                if (canMove && !isBlocking) // Allowed to jump while attacking for infinite jump feel
+                bool canJump = isGrounded || currentJumpCount < maxJumpCount;
+                if (canMove && !isBlocking && canJump)
                 {
                     jumpQueued = true;
-                    Debug.Log($"[InnerDuel] Player {playerID} Jump Queued (Infinite)!");
+                    Debug.Log($"[InnerDuel] Player {playerID} Jump Queued ({currentJumpCount + 1}/{maxJumpCount}).");
                 }
             }
 
@@ -377,6 +381,7 @@ namespace InnerDuel.Characters
 
             if (isGrounded && !wasGrounded)
             {
+                currentJumpCount = 0;
                 Debug.Log($"[InnerDuel] Player {playerID} Landed.");
                 PlayCharacterAudio(CharacterAudioAction.Land, 0.8f);
             }
@@ -388,17 +393,25 @@ namespace InnerDuel.Characters
             // if an attack/block starts in the same frame as the jump execution.
             if (jumpQueued)
             {
+                bool canExecuteJump = isGrounded || currentJumpCount < maxJumpCount;
+                if (!canExecuteJump)
+                {
+                    jumpQueued = false;
+                    return;
+                }
+
                 float jumpForce = characterData != null ? characterData.jumpForce : 12f;
                 jumpForce *= jumpForceMultiplier;
                 
                 rb.velocity = new Vector2(rb.velocity.x, 0f); // Reset Y velocity for consistent jump height
                 rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
                 
+                currentJumpCount++;
                 jumpQueued = false;
                 isGrounded = false;
                 
                 if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsGrounded, false);
-                Debug.Log($"[InnerDuel] Player {playerID} Jump Executed!");
+                Debug.Log($"[InnerDuel] Player {playerID} Jump Executed ({currentJumpCount}/{maxJumpCount})!");
                 PlayCharacterAudio(CharacterAudioAction.Jump, 0.9f);
             }
 
