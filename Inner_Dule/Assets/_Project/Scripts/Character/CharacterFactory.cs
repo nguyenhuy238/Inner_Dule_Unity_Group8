@@ -22,10 +22,12 @@ namespace InnerDuel.Characters
         {
             if (disciplinePrefab == null) disciplinePrefab = FindPrefab("Discipline_Character");
             if (spontaneityPrefab == null) spontaneityPrefab = FindPrefab("Spontaneity_Character");
-            if (logicPrefab == null) logicPrefab = FindPrefab("Logic_Character") ?? FindPrefab("Player1");
-            if (creativityPrefab == null) creativityPrefab = FindPrefab("Creativity_Character") ?? FindPrefab("Player2");
+            if (logicPrefab == null) logicPrefab = FindPrefab("Char_Logic") ;
+            if (creativityPrefab == null) creativityPrefab = FindPrefab("Char_Creative") ;
         }
-
+        //?? FindPrefab("Player1")
+        //    ?? FindPrefab("Player2")
+        //Creativity
         private GameObject FindPrefab(string name)
         {
             string[] guids = UnityEditor.AssetDatabase.FindAssets(name + " t:Prefab");

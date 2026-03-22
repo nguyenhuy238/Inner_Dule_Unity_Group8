@@ -671,10 +671,9 @@ namespace InnerDuel.Characters
             {
                 StartCoroutine(AxeDashStabRoutine());
             }
-            
-            // Special Logic: Leap (Attack 3)
+
             bool isAxeOrArcher = characterData != null && (characterData.type == CharacterType.Emotion || characterData.type == CharacterType.Reason);
-            if (attackIndex == 3 && characterData != null && characterData.attack3LeapForce != Vector2.zero && !isAxeOrArcher)
+            if (attackIndex == 3 && characterData != null && characterData.attack3LeapForce != Vector2.zero && !isAxeOrArcher && characterData.characterName != "Creative")
             {
                 // Leap
                 float dir = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
@@ -766,7 +765,7 @@ namespace InnerDuel.Characters
 
                 if (coreProj != null)
                 {
-                    if (characterData != null && characterData.projectileSpeed > 0f)
+                    if (characterData != null && characterData.projectileSpeed > 0f && characterData.characterName != "Creative")
                     {
                         coreProj.speed = characterData.projectileSpeed;
                     }

@@ -19,8 +19,8 @@ MonoBehaviour:
   characterName: Logic
   portrait: {fileID: 21300000, guid: 6c8526ea309786744a5634a4ab1cd03f, type: 3}
   description: Logic
-  maxHealth: 100
-  moveSpeed: 5
+  maxHealth: 150
+  moveSpeed: 7
   defense: 5
   jumpForce: 15
   airControlMultiplier: 0.8

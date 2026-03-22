@@ -51,6 +51,9 @@ namespace InnerDuel.Audio
         public AudioClip[] dashSounds;
         public AudioClip[] deathSounds;
         public AudioClip[] victorySounds;
+        public AudioClip[] jumpSounds;
+        public AudioClip[] landSounds;
+        public AudioClip[] footstepSounds;
 
         [Header("UI SFX")]
         [Tooltip("Clip click mặc định cho UI Button/phím chọn menu.")]
@@ -403,14 +406,20 @@ namespace InnerDuel.Audio
                 case CharacterAudioAction.Victory:
                     PlayRandomVictorySound();
                     break;
+                case CharacterAudioAction.Jump:
+                    PlayClipOnSfxSource(GetRandomClip(jumpSounds), finalVolume, 0.95f, 1.05f);
+                    break;
+                case CharacterAudioAction.Land:
+                    PlayClipOnSfxSource(GetRandomClip(landSounds), finalVolume, 0.95f, 1.05f);
+                    break;
+                case CharacterAudioAction.Footstep:
+                    PlayClipOnSfxSource(GetRandomClip(footstepSounds), finalVolume, 0.98f, 1.02f);
+                    break;
                 case CharacterAudioAction.Hurt:
                 case CharacterAudioAction.NormalAttack:
                 case CharacterAudioAction.Skill1:
                 case CharacterAudioAction.Skill2:
                 case CharacterAudioAction.Skill3:
-                case CharacterAudioAction.Jump:
-                case CharacterAudioAction.Land:
-                case CharacterAudioAction.Footstep:
                     PlayClipOnSfxSource(GetRandomClip(hitSounds), finalVolume, 0.95f, 1.05f);
                     break;
             }

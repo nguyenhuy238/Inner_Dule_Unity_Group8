@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 7005527226333867696}
   - component: {fileID: 447673200421180434}
   - component: {fileID: 4792576214740402402}
+  - component: {fileID: 2838676257610848389}
   m_Layer: 8
   m_Name: Char_Emotion
   m_TagString: Untagged
@@ -167,8 +168,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1104047037
+  m_SortingLayer: 3
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 4a4696715993d3f4faadcf633c0902bc, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}

@@ -1,5 +1,6 @@
 using UnityEngine;
 using InnerDuel.Characters;
+using InnerDuel.Core.StatusEffects;
 
 namespace InnerDuel.Core
 {
@@ -12,6 +13,10 @@ namespace InnerDuel.Core
         
         [Header("Effects")]
         public GameObject hitEffectPrefab;
+        
+        [Header("Status Effects")]
+        public bool applyStun = false;
+        public float stunDuration = 3.0f;
         
         private Vector2 direction;
         private int shooterID;
@@ -66,6 +71,17 @@ namespace InnerDuel.Core
                 if (target != null)
                 {
                     target.TakeDamage(damage);
+                    
+                    // Apply Stun if enabled
+                    if (applyStun)
+                    {
+                        var stunManager = target.GetComponent<StatusEffectManager>();
+                        if (stunManager != null)
+                        {
+                            stunManager.ApplyEffect(new StunEffect(stunDuration));
+                            Debug.Log($"[Projectile] Applied Stun ({stunDuration}s) to {target.gameObject.name}");
+                        }
+                    }
                 }
                 
                 OnHit();

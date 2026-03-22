@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 2051194131729234553}
   - component: {fileID: 7844684572418052747}
   - component: {fileID: -4910189705949449377}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Skill_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -74,8 +74,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1104047037
+  m_SortingLayer: 3
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 6e16befb1024eed45954e02966008338, type: 3}
   m_Color: {r: 0.3773585, g: 0.008899963, b: 0.25080875, a: 1}
@@ -125,6 +125,8 @@ MonoBehaviour:
   damage: 10
   lifetime: 3
   hitEffectPrefab: {fileID: 0}
+  applyStun: 1
+  stunDuration: 3
 --- !u!50 &7844684572418052747
 Rigidbody2D:
   serializedVersion: 4

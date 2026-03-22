@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 4792576214740402402}
   - component: {fileID: 4279161098551883834}
   - component: {fileID: -4284580431683380921}
+  - component: {fileID: 7890018526247588812}
   m_Layer: 8
   m_Name: Char_Creativity
   m_TagString: Player2
@@ -33,7 +34,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -1.1, y: 0.1, z: 25.281307}
-  m_LocalScale: {x: 0.15, y: 0.17, z: 0.3}
+  m_LocalScale: {x: 0.25, y: 0.27, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -169,8 +170,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1104047037
+  m_SortingLayer: 3
   m_SortingOrder: 2
   m_Sprite: {fileID: 21300000, guid: 7343124f856f6ad41bbf234510b7451b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -199,6 +200,8 @@ MonoBehaviour:
   playerID: 1
   moveSpeedMultiplier: 1
   jumpForceMultiplier: 1
+  damageMultiplier: 1
+  maxJumpCount: 2
   normalAttackPoint: {fileID: 0}
   attack1Point: {fileID: 0}
   attack2Point: {fileID: 0}
@@ -213,6 +216,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   healthBar: {fileID: 0}
+  hitStunDuration: 0.25
 --- !u!114 &4279161098551883834
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -225,7 +229,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1368b8b880fe1fc48aa3298057c91261, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  teleportDistance: -3
+  teleportDistance: -5
   teleportEffect: {fileID: 0}
 --- !u!114 &-4284580431683380921
 MonoBehaviour:
@@ -239,3 +243,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a905c2903e16b714687a231c5c813b6a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7890018526247588812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 764730707852355852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7df83829dbcf48e4969f995737a10214, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  controller: {fileID: 4792576214740402402}
