@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 7005527226333867696}
   - component: {fileID: 447673200421180434}
   - component: {fileID: 4792576214740402402}
+  - component: {fileID: 210628646004578194}
   m_Layer: 8
   m_Name: Char_Logic
   m_TagString: Player1
@@ -198,6 +199,7 @@ MonoBehaviour:
   moveSpeedMultiplier: 1
   jumpForceMultiplier: 1
   damageMultiplier: 1
+  maxJumpCount: 2
   normalAttackPoint: {fileID: 0}
   attack1Point: {fileID: 0}
   attack2Point: {fileID: 0}
@@ -213,3 +215,16 @@ MonoBehaviour:
     m_Bits: 0
   healthBar: {fileID: 0}
   hitStunDuration: 0.25
+--- !u!114 &210628646004578194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 764730707852355852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7df83829dbcf48e4969f995737a10214, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  controller: {fileID: 4792576214740402402}

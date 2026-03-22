@@ -744,7 +744,7 @@ namespace InnerDuel.Characters
 
                 if (coreProj != null)
                 {
-                    if (characterData != null && characterData.projectileSpeed > 0f)
+                    if (characterData != null && characterData.projectileSpeed > 0f && characterData.characterName != "Creative")
                     {
                         coreProj.speed = characterData.projectileSpeed;
                     }
