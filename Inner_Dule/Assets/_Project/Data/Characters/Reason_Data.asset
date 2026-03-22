@@ -46,7 +46,7 @@ MonoBehaviour:
   arrowSkill2Prefab: {fileID: 0}
   arrowSkill3Prefab: {fileID: 6554503480051727019, guid: 3b7a0c21e4c83e4498b07d406fd62042, type: 3}
   projectileSpeed: 10
-  attack3LeapForce: {x: 5, y: 5}
+  attack3LeapForce: {x: 0, y: 0}
   attack3ControlLock: 0.2
   mainColor: {r: 1, g: 1, b: 1, a: 1}
   effectColor: {r: 1, g: 0, b: 0, a: 1}
