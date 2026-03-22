@@ -1078,7 +1078,7 @@ Camera:
   far clip plane: 5000
   field of view: 40
   orthographic: 1
-  orthographic size: 4.0623765
+  orthographic size: 4.757791
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -2490,7 +2490,7 @@ MonoBehaviour:
   uiManager: {fileID: 2013290071}
   cameraController: {fileID: 519420033}
   introDuration: 3
-  endingDuration: 5
+  endingDuration: 2
 --- !u!1 &1266223638
 GameObject:
   m_ObjectHideFlags: 0
@@ -3675,66 +3675,80 @@ MonoBehaviour:
     volumeScale: 2
     pitchMin: 0
     pitchMax: 0
-  - characterType: 0
+  - characterType: 1
+    action: 1
+    clips:
+    - {fileID: 8300000, guid: 9d5b16af6751d254e807f084064f8d19, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 1
+    action: 2
+    clips:
+    - {fileID: 8300000, guid: c531c425557fbff4ca6d6571c477240e, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 1
     action: 3
+    clips:
+    - {fileID: 8300000, guid: bd90912e9db32a340a44d7d5a892f143, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 0
+    action: 8
+    clips:
+    - {fileID: 8300000, guid: befa40696fab37d4e900af92a60df46c, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 1
+    action: 8
+    clips:
+    - {fileID: 8300000, guid: befa40696fab37d4e900af92a60df46c, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 0
+    action: 2
+    clips:
+    - {fileID: 8300000, guid: 4ac4c47cc718b5c488bc7b768b30f873, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 0
+    action: 1
     clips:
     - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
     volumeScale: 2
     pitchMin: 0
     pitchMax: 0
   - characterType: 0
-    action: 3
+    action: 0
     clips:
     - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
     volumeScale: 2
-    pitchMin: 0
-    pitchMax: 0
-  - characterType: 0
-    action: 3
+    pitchMin: 0.5
+    pitchMax: 0.5
+  - characterType: 1
+    action: 0
     clips:
-    - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
+    - {fileID: 8300000, guid: 9d5b16af6751d254e807f084064f8d19, type: 3}
+    volumeScale: 2
+    pitchMin: 0.5
+    pitchMax: 0.5
+  - characterType: 0
+    action: 9
+    clips:
+    - {fileID: 8300000, guid: befa40696fab37d4e900af92a60df46c, type: 3}
     volumeScale: 2
     pitchMin: 0
     pitchMax: 0
-  - characterType: 0
-    action: 3
+  - characterType: 1
+    action: 9
     clips:
-    - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
-    volumeScale: 2
-    pitchMin: 0
-    pitchMax: 0
-  - characterType: 0
-    action: 3
-    clips:
-    - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
-    volumeScale: 2
-    pitchMin: 0
-    pitchMax: 0
-  - characterType: 0
-    action: 3
-    clips:
-    - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
-    volumeScale: 2
-    pitchMin: 0
-    pitchMax: 0
-  - characterType: 0
-    action: 3
-    clips:
-    - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
-    volumeScale: 2
-    pitchMin: 0
-    pitchMax: 0
-  - characterType: 0
-    action: 3
-    clips:
-    - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
-    volumeScale: 2
-    pitchMin: 0
-    pitchMax: 0
-  - characterType: 0
-    action: 3
-    clips:
-    - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
+    - {fileID: 8300000, guid: befa40696fab37d4e900af92a60df46c, type: 3}
     volumeScale: 2
     pitchMin: 0
     pitchMax: 0
