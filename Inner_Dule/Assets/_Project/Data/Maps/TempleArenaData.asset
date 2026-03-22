@@ -16,5 +16,5 @@ MonoBehaviour:
   previewImage: {fileID: 21300000, guid: cfbd71744e2766d4bb304bacf2dd39a9, type: 3}
   mapPrefab: {fileID: 7391213783406416950, guid: f3b15e931cb283e4eae6c899421cf524, type: 3}
   mapBgmClip: {fileID: 8300000, guid: f59ee6e1b81fffb4e84e8ebf6b16589c, type: 3}
-  mapBgmVolume: 1
+  mapBgmVolume: 0.51
   description: Ancient temple battlefield

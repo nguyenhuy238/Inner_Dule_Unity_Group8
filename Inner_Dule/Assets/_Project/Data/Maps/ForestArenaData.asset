@@ -16,5 +16,5 @@ MonoBehaviour:
   previewImage: {fileID: 21300000, guid: bb58350735ac37a45aba65cf03988285, type: 3}
   mapPrefab: {fileID: 5844770855482572671, guid: 67288552328ebc64293129c984458f83, type: 3}
   mapBgmClip: {fileID: 8300000, guid: 08da27b4fdc901a4c929c749825e7988, type: 3}
-  mapBgmVolume: 1
+  mapBgmVolume: 0.54
   description: Deep forest battlegrounds

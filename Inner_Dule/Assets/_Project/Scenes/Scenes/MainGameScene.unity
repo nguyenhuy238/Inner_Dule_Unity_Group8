@@ -3752,6 +3752,76 @@ MonoBehaviour:
     volumeScale: 2
     pitchMin: 0
     pitchMax: 0
+  - characterType: 4
+    action: 9
+    clips:
+    - {fileID: 8300000, guid: befa40696fab37d4e900af92a60df46c, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 5
+    action: 9
+    clips:
+    - {fileID: 8300000, guid: befa40696fab37d4e900af92a60df46c, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 5
+    action: 0
+    clips:
+    - {fileID: 8300000, guid: 15f921c8e2c971042850d4816d8e9fd9, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 5
+    action: 1
+    clips:
+    - {fileID: 8300000, guid: 15f921c8e2c971042850d4816d8e9fd9, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 5
+    action: 2
+    clips:
+    - {fileID: 8300000, guid: 10171b4a5d4beb44c94028e7ba816f31, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 5
+    action: 3
+    clips:
+    - {fileID: 8300000, guid: 191eb30efa772da4eb40bf43014b130b, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 4
+    action: 0
+    clips:
+    - {fileID: 8300000, guid: dfeb106c78dc47c4c841596e2db3602b, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 4
+    action: 1
+    clips:
+    - {fileID: 8300000, guid: a65c64f887ba90e47b60411086df7c18, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 4
+    action: 2
+    clips:
+    - {fileID: 8300000, guid: a65c64f887ba90e47b60411086df7c18, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
+  - characterType: 4
+    action: 3
+    clips:
+    - {fileID: 8300000, guid: da5c9668ab17d3e4ab3798381aa12ef7, type: 3}
+    volumeScale: 2
+    pitchMin: 0
+    pitchMax: 0
   bgmTracks:
   - {fileID: 8300000, guid: 34c4b64dacf8b4a458adf65f0cf22962, type: 3}
   - {fileID: 8300000, guid: 7aa6626348c16bf459bb43cbec126be0, type: 3}
