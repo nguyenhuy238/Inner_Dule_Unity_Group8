@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using InnerDuel;
 using InnerDuel.Input;
+using InnerDuel.Audio;
 using System.Collections;
 using System;
 
@@ -20,6 +21,9 @@ namespace InnerDuel.Characters
         public float moveSpeedMultiplier = 1f;
         public float jumpForceMultiplier = 1f;
         public float damageMultiplier = 1f;
+        
+        [Header("Jump Settings")]
+        [SerializeField] private int maxJumpCount = 2;
 
         [Header("Combat References")]
         public Transform normalAttackPoint;
@@ -73,6 +77,7 @@ namespace InnerDuel.Characters
         // Input Buffers
         private Vector2 moveInput;
         private bool jumpQueued;
+        private int currentJumpCount = 0;
         
         // Timers
         private float normalAttackCooldown = 0f;
@@ -106,6 +111,10 @@ namespace InnerDuel.Characters
             animator = GetComponent<Animator>();
             spriteRenderer = GetComponent<SpriteRenderer>();
             statusEffectManager = GetComponent<InnerDuel.Core.StatusEffects.StatusEffectManager>();
+            if (GetComponent<CharacterAnimationAudioEvents>() == null)
+            {
+                gameObject.AddComponent<CharacterAnimationAudioEvents>();
+            }
             
             // Ensure StatusEffectManager
             if (statusEffectManager == null)
@@ -143,6 +152,10 @@ namespace InnerDuel.Characters
         {
             // Initialize Input Manager
             inputManager = InputManager.InstanceSafe();
+
+            // Ensure character-specific ability exists even when characters are spawned
+            // directly by GameManager (without going through CharacterFactory).
+            EnsureUniqueAbilityForCharacter();
             
             // Warning for missing ground layer removed per user request
             if (healthBar != null)
@@ -158,6 +171,45 @@ namespace InnerDuel.Characters
             foreach (var ability in abilities)
             {
                 ability.Initialize(this, characterData);
+            }
+        }
+
+        private void EnsureUniqueAbilityForCharacter()
+        {
+            if (characterData == null) return;
+
+            switch (characterData.type)
+            {
+                case CharacterType.Discipline:
+                    if (GetComponent<Ability_DisciplineParry>() == null)
+                    {
+                        gameObject.AddComponent<Ability_DisciplineParry>();
+                    }
+                    break;
+                case CharacterType.Spontaneity:
+                    if (GetComponent<Ability_SpontaneityDash>() == null)
+                    {
+                        gameObject.AddComponent<Ability_SpontaneityDash>();
+                    }
+                    break;
+                case CharacterType.Reason:
+                    if (GetComponent<Ability_LogicArcher>() == null)
+                    {
+                        gameObject.AddComponent<Ability_LogicArcher>();
+                    }
+                    break;
+                case CharacterType.Creativity:
+                    if (GetComponent<Ability_Creative>() == null)
+                    {
+                        gameObject.AddComponent<Ability_Creative>();
+                    }
+                    break;
+                case CharacterType.Emotion:
+                    if (GetComponent<Ability_EmotionAxe>() == null)
+                    {
+                        gameObject.AddComponent<Ability_EmotionAxe>();
+                    }
+                    break;
             }
         }
 
@@ -295,11 +347,11 @@ namespace InnerDuel.Characters
             bool jumpRequested = inputManager.GetButtonDown(playerID, "Jump");
             if (jumpRequested)
             {
-                // Removed isGrounded check for "infinite jumping" per user request
-                if (canMove && !isBlocking) // Allowed to jump while attacking for infinite jump feel
+                bool canJump = isGrounded || currentJumpCount < maxJumpCount;
+                if (canMove && !isBlocking && canJump)
                 {
                     jumpQueued = true;
-                    Debug.Log($"[InnerDuel] Player {playerID} Jump Queued (Infinite)!");
+                    Debug.Log($"[InnerDuel] Player {playerID} Jump Queued ({currentJumpCount + 1}/{maxJumpCount}).");
                 }
             }
 
@@ -372,7 +424,9 @@ namespace InnerDuel.Characters
 
             if (isGrounded && !wasGrounded)
             {
+                currentJumpCount = 0;
                 Debug.Log($"[InnerDuel] Player {playerID} Landed.");
+                PlayCharacterAudio(CharacterAudioAction.Land, 0.8f);
             }
         }
 
@@ -382,17 +436,26 @@ namespace InnerDuel.Characters
             // if an attack/block starts in the same frame as the jump execution.
             if (jumpQueued)
             {
+                bool canExecuteJump = isGrounded || currentJumpCount < maxJumpCount;
+                if (!canExecuteJump)
+                {
+                    jumpQueued = false;
+                    return;
+                }
+
                 float jumpForce = characterData != null ? characterData.jumpForce : 12f;
                 jumpForce *= jumpForceMultiplier;
                 
                 rb.velocity = new Vector2(rb.velocity.x, 0f); // Reset Y velocity for consistent jump height
                 rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
                 
+                currentJumpCount++;
                 jumpQueued = false;
                 isGrounded = false;
                 
                 if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsGrounded, false);
-                Debug.Log($"[InnerDuel] Player {playerID} Jump Executed!");
+                Debug.Log($"[InnerDuel] Player {playerID} Jump Executed ({currentJumpCount}/{maxJumpCount})!");
+                PlayCharacterAudio(CharacterAudioAction.Jump, 0.9f);
             }
 
             // Control Lock (e.g. during Leap Attack)
@@ -493,8 +556,14 @@ namespace InnerDuel.Characters
                 animator.SetBool(animIsAttacking, true);
             }
 
-            // Melee Hitbox
-            StartCoroutine(MeleeAttackRoutine(0.15f, normalAttackPoint, range, damage, attackToken));
+            PlayCharacterAudio(CharacterAudioAction.NormalAttack);
+
+            bool abilityHandlesAttackDamage = ShouldAbilityHandleAttackDamage();
+            if (!abilityHandlesAttackDamage)
+            {
+                // Melee Hitbox
+                StartCoroutine(MeleeAttackRoutine(0.15f, normalAttackPoint, range, damage, attackToken));
+            }
 
             // Reset State
             float recoveryTime = 0.3f;
@@ -568,6 +637,11 @@ namespace InnerDuel.Characters
                 animator.SetBool(animIsAttacking, true);
             }
 
+            CharacterAudioAction attackAction = CharacterAudioAction.Skill1;
+            if (attackIndex == 2) attackAction = CharacterAudioAction.Skill2;
+            else if (attackIndex == 3) attackAction = CharacterAudioAction.Skill3;
+            PlayCharacterAudio(attackAction);
+
             // Notify abilities
             foreach (var ability in abilities)
             {
@@ -587,25 +661,21 @@ namespace InnerDuel.Characters
                 controlLockUntil = Time.time + characterData.attack3ControlLock;
             }
 
-            // Special Logic: Projectile (Player 2 / Ranged)
-            // Check if we should spawn projectile. 
-            // Simple logic: If prefab exists and it's Attack 1 or 3 (classic shoto/zoning).
-            bool isProjectile = (characterData != null && characterData.projectilePrefab != null && (attackIndex == 1 || attackIndex == 3));
-            
-            // Logic Archer handles all projectiles directly in Ability_LogicArcher
-            if (characterData != null && characterData.type == CharacterType.Reason || characterData != null && characterData.type == CharacterType.Creativity)
+            bool abilityHandlesAttackDamage = ShouldAbilityHandleAttackDamage();
+            if (!abilityHandlesAttackDamage)
             {
-                isProjectile = false;
-            }
+                // Special Logic: Projectile for built-in characters (Attack 1/3)
+                bool isProjectile = (characterData != null && characterData.projectilePrefab != null && (attackIndex == 1 || attackIndex == 3));
 
-            if (isProjectile)
-            {
-                StartCoroutine(SpawnProjectileRoutine(0.2f, damage, 1, null, attackToken));
-            }
-            else
-            {
-                // Melee Hitbox
-                StartCoroutine(MeleeAttackRoutine(0.2f, point, range, damage, attackToken));
+                if (isProjectile)
+                {
+                    StartCoroutine(SpawnProjectileRoutine(0.2f, damage, 1, null, attackToken));
+                }
+                else
+                {
+                    // Melee Hitbox
+                    StartCoroutine(MeleeAttackRoutine(0.2f, point, range, damage, attackToken));
+                }
             }
 
             // Reset State
@@ -674,9 +744,32 @@ namespace InnerDuel.Characters
 
                 if (coreProj != null)
                 {
+                    if (characterData != null && characterData.projectileSpeed > 0f)
+                    {
+                        coreProj.speed = characterData.projectileSpeed;
+                    }
+
                     coreProj.Initialize(finalDirection, playerID, damage, opponentLayer);
                 }
             }
+        }
+
+        private bool ShouldAbilityHandleAttackDamage()
+        {
+            if (abilities.Count == 0)
+            {
+                abilities.AddRange(GetComponents<BaseCharacterAbility>());
+            }
+
+            foreach (var ability in abilities)
+            {
+                if (ability is Ability_LogicArcher || ability is Ability_Creative || ability is Ability_SpontaneityDash)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private IEnumerator ResetAttackState(float delay, int attackToken)
@@ -711,7 +804,10 @@ namespace InnerDuel.Characters
             float dashSpeed = characterData.moveSpeed * characterData.dashSpeedMultiplier;
             
             rb.velocity = new Vector2(dir * dashSpeed, 0f); // Horizontal Dash
-            
+
+            PlayCharacterAudio(CharacterAudioAction.DashStart);
+            foreach (var ability in abilities) ability.OnDash();
+
             StartCoroutine(ResetDashState(characterData.dashDuration));
         }
 
@@ -730,6 +826,7 @@ namespace InnerDuel.Characters
             rb.velocity = Vector2.zero;
             lastBlockStartTime = Time.time;
             if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsBlocking, true);
+            PlayCharacterAudio(CharacterAudioAction.BlockStart);
             foreach (var ability in abilities) ability.OnBlockStart();
         }
 
@@ -754,16 +851,15 @@ namespace InnerDuel.Characters
             // Re-check if still alive/valid after ability logic
             if (isDead) return;
 
-            // Play hit sound
-            if (InnerDuel.Audio.AudioManager.Instance != null)
-            {
-                InnerDuel.Audio.AudioManager.Instance.PlayRandomHitSound();
-            }
-
             // Block Logic
             if (isBlocking)
             {
                 damage *= 0.2f; // Block 80% damage
+                PlayCharacterAudio(CharacterAudioAction.BlockImpact, 0.9f);
+            }
+            else
+            {
+                PlayCharacterAudio(CharacterAudioAction.Hurt);
             }
             
             currentHealth = Mathf.Clamp(currentHealth - damage, 0f, MaxHealth);
@@ -822,6 +918,8 @@ namespace InnerDuel.Characters
             rb.velocity = Vector2.zero;
             
             if (animator != null && animator.runtimeAnimatorController != null) animator.SetBool(animIsDead, true);
+            PlayCharacterAudio(CharacterAudioAction.Death);
+            foreach (var ability in abilities) ability.OnDie();
             
             GameManager.Instance.OnCharacterDied(this);
         }
@@ -840,6 +938,16 @@ namespace InnerDuel.Characters
             animator.SetFloat(animMoveSpeed, Mathf.Abs(rb.velocity.x));
             animator.SetFloat(animVerticalSpeed, rb.velocity.y);
             animator.SetBool(animIsGrounded, isGrounded);
+        }
+
+        private void PlayCharacterAudio(CharacterAudioAction action, float volumeMultiplier = 1f)
+        {
+            if (characterData == null) return;
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayCharacterActionSfx(characterData.type, action, volumeMultiplier);
+            }
         }
 
 #if UNITY_EDITOR

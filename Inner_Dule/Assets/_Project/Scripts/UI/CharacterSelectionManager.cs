@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using InnerDuel.Characters;
 using InnerDuel.Core;
+using InnerDuel.Audio;
 
 namespace InnerDuel.UI
 {
@@ -27,6 +28,7 @@ namespace InnerDuel.UI
             player1SelectedType = (CharacterType)typeIndex;
             CharacterData data = CharacterFactory.Instance.CreateCharacter(player1SelectedType, Vector3.zero, 1).GetComponent<InnerCharacterController>().characterData;
             onPlayer1SelectionChanged?.Invoke(data);
+            PlayUIClick();
             
             Debug.Log($"[Select] Player 1 selected: {player1SelectedType}");
         }
@@ -39,6 +41,7 @@ namespace InnerDuel.UI
             player2SelectedType = (CharacterType)typeIndex;
             CharacterData data = CharacterFactory.Instance.CreateCharacter(player2SelectedType, Vector3.zero, 2).GetComponent<InnerCharacterController>().characterData;
             onPlayer2SelectionChanged?.Invoke(data);
+            PlayUIClick();
             
             Debug.Log($"[Select] Player 2 selected: {player2SelectedType}");
         }
@@ -48,12 +51,21 @@ namespace InnerDuel.UI
         /// </summary>
         public void ConfirmSelection()
         {
+            PlayUIClick();
             // Lưu lựa chọn vào một biến tĩnh (Static) hoặc PlayerPrefs để GameManager đọc
             SelectionData.P1_Type = player1SelectedType;
             SelectionData.P2_Type = player2SelectedType;
             
             // Chuyển sang scene Gameplay
             UnityEngine.SceneManagement.SceneManager.LoadScene("MainGameScene");
+        }
+
+        private void PlayUIClick()
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayUIClick();
+            }
         }
     }
 

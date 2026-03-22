@@ -276,11 +276,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0565af86ba2adbd47b34045fbf3154de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characterData: {fileID: 11400000, guid: 569c5d0f809630540ad0e58cf94bd243, type: 2}
+  characterData: {fileID: 11400000, guid: f5722b806e4191941a86188fe7ea1402, type: 2}
   playerID: 1
   moveSpeedMultiplier: 1
   jumpForceMultiplier: 1
   damageMultiplier: 1
+  maxJumpCount: 2
   normalAttackPoint: {fileID: 0}
   attack1Point: {fileID: 0}
   attack2Point: {fileID: 0}

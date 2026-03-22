@@ -1,5 +1,6 @@
 using UnityEngine;
 using InnerDuel.Core.StatusEffects;
+using InnerDuel.Audio;
 
 namespace InnerDuel.Characters
 {
@@ -23,6 +24,10 @@ namespace InnerDuel.Characters
         private void TriggerPerfectParry()
         {
             Debug.Log($"[InnerDuel] {characterData.characterName} triggered PERFECT PARRY!");
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayCharacterActionSfx(characterData.type, CharacterAudioAction.Parry, 1.1f);
+            }
 
             // 1. Gây Stun cho đối thủ trong tầm đánh
             Collider2D[] attackers = Physics2D.OverlapCircleAll(transform.position, characterData.attackRange + 1.5f, controller.opponentLayer);

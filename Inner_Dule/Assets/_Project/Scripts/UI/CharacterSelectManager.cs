@@ -6,6 +6,7 @@ using TMPro;
 using System.Collections.Generic;
 using InnerDuel.Core;
 using InnerDuel.Characters;
+using InnerDuel.Audio;
 
 namespace InnerDuel.UI
 {
@@ -30,9 +31,22 @@ namespace InnerDuel.UI
         private bool p1Confirmed = false;
         private bool p2Confirmed = false;
 
+        [Header("Audio")]
+        public AudioClip sceneMusic;
+
         private void Start()
         {
+            SetupSceneAudio();
             UpdateUI();
+        }
+
+        private void SetupSceneAudio()
+        {
+            if (AudioManager.Instance == null || sceneMusic == null) return;
+
+            string sceneName = SceneManager.GetActiveScene().name;
+            AudioManager.Instance.RegisterSceneMusic(sceneName, sceneMusic);
+            AudioManager.Instance.PlaySceneBGM(sceneName);
         }
 
         private void Update()
@@ -73,6 +87,8 @@ namespace InnerDuel.UI
 
         public void ChangeSelection(int playerID, int direction)
         {
+            if (availableCharacters == null || availableCharacters.Count == 0) return;
+
             if (playerID == 1)
             {
                 p1Index = (p1Index + direction + availableCharacters.Count) % availableCharacters.Count;
@@ -81,11 +97,14 @@ namespace InnerDuel.UI
             {
                 p2Index = (p2Index + direction + availableCharacters.Count) % availableCharacters.Count;
             }
+
+            PlayUIClick();
             UpdateUI();
         }
 
         public void ConfirmSelection(int playerID)
         {
+            PlayUIClick();
             if (playerID == 1) p1Confirmed = true;
             else p2Confirmed = true;
             UpdateUI();
@@ -93,6 +112,7 @@ namespace InnerDuel.UI
 
         public void CancelSelection(int playerID)
         {
+            PlayUIClick();
             if (playerID == 1) p1Confirmed = false;
             else p2Confirmed = false;
             UpdateUI();
@@ -124,7 +144,16 @@ namespace InnerDuel.UI
 
         public void BackToMenu()
         {
+            PlayUIClick();
             SceneManager.LoadScene(GameData.MainMenuScene);
+        }
+
+        private void PlayUIClick()
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayUIClick();
+            }
         }
     }
 }
