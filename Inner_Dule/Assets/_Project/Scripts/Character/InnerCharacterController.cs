@@ -237,7 +237,7 @@ namespace InnerDuel.Characters
             {
                 var go = new GameObject("NormalAttackPoint");
                 go.transform.SetParent(transform);
-                go.transform.localPosition = new Vector3(0.6f, 0f, 0f);
+                go.transform.localPosition = new Vector3(1.0f, 0f, 0f);
                 normalAttackPoint = go.transform;
             }
 
@@ -580,8 +580,8 @@ namespace InnerDuel.Characters
                 StartCoroutine(MeleeAttackRoutine(0.15f, normalAttackPoint, range, damage, attackToken));
             }
 
-            // Reset State
-            float recoveryTime = 0.3f;
+            // Reset State - Use animation length or cooldown (whichever is shorter)
+            float recoveryTime = Mathf.Min(cooldown * 0.6f, 0.25f); // 60% of cooldown or 0.25s max
             StartCoroutine(ResetAttackState(recoveryTime, attackToken));
             
             // Notify abilities
@@ -699,8 +699,8 @@ namespace InnerDuel.Characters
                 }
             }
 
-            // Reset State
-            float recoveryTime = 0.4f; // Default recovery
+            // Reset State - Use animation length or cooldown (whichever is shorter)
+            float recoveryTime = Mathf.Min(cooldown * 0.7f, 0.35f); // 70% of cooldown or 0.35s max
             StartCoroutine(ResetAttackState(recoveryTime, attackToken));
         }
 

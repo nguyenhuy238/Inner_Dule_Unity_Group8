@@ -25,7 +25,7 @@ MonoBehaviour:
   jumpForce: 15
   airControlMultiplier: 0.8
   normalAttackDamage: 5
-  normalAttackRange: 0.8
+  normalAttackRange: 1.2
   normalAttackCooldown: 1
   attackDamage: 10
   attackRange: 1.2
