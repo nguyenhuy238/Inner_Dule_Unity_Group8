@@ -58,8 +58,8 @@ namespace InnerDuel.Characters
         private bool isGrounded = false;
         private bool isAttacking = false;
         private bool isBlocking = false;
-        private bool isDashing = false;
-        private bool canMove = true;
+        public bool isDashing = false;
+        public bool canMove = true;
         private float controlLockUntil = 0f;
         private float lastBlockStartTime = 0f;
         private float hitStunTimer = 0f;
@@ -163,6 +163,8 @@ namespace InnerDuel.Characters
                 healthBar.SetMaxHealth(MaxHealth);
                 healthBar.SetHealth(currentHealth, true);
             }
+            
+            SetupOpponentLayer();
 
             NotifyHealthChanged();
             
@@ -465,9 +467,22 @@ namespace InnerDuel.Characters
                 return;
             }
 
-            // Stop movement if Blocking or Attacking (unless aerial drift allowed? usually no in strict 2D fighters)
-            // Allow some air control?
-            if (!canMove || isAttacking || isBlocking || isDashing)
+            // Handle Hit Stun (Prevent movement while being hit)
+            if (IsHitStunned)
+            {
+                // Let the velocity (knockback) take its course, maybe apply slight drag
+                rb.velocity = new Vector2(rb.velocity.x * 0.98f, rb.velocity.y);
+                return;
+            }
+
+            // Stop movement if Blocking or Attacking (unless Dashing)
+            if (isDashing)
+            {
+                // Allow the dash (either from controller or ability) to maintain its velocity
+                return;
+            }
+
+            if (!canMove || isAttacking || isBlocking)
             {
                 if (isGrounded)
                 {
@@ -650,9 +665,16 @@ namespace InnerDuel.Characters
                 else if (attackIndex == 2) ability.OnSkill2();
                 else if (attackIndex == 3) ability.OnSkill3();
             }
+
+            // Special Skill 3 Logic: Axe Dash (Emotion)
+            if (attackIndex == 3 && characterData != null && characterData.type == CharacterType.Emotion)
+            {
+                StartCoroutine(AxeDashStabRoutine());
+            }
             
             // Special Logic: Leap (Attack 3)
-            if (attackIndex == 3 && characterData != null && characterData.attack3LeapForce != Vector2.zero)
+            bool isAxeOrArcher = characterData != null && (characterData.type == CharacterType.Emotion || characterData.type == CharacterType.Reason);
+            if (attackIndex == 3 && characterData != null && characterData.attack3LeapForce != Vector2.zero && !isAxeOrArcher)
             {
                 // Leap
                 float dir = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
@@ -892,6 +914,113 @@ namespace InnerDuel.Characters
             PerformAttack(1);
             
             Debug.Log($"[InnerDuel] {gameObject.name} triggered COUNTER ATTACK!");
+        }
+
+        private IEnumerator AxeDashStabRoutine()
+        {
+            // Bắt đầu lướt ngay lập tức
+            isDashing = true;
+            canMove = false;
+
+            // Đảm bảo Root Motion không ghi đè vận tốc và chạy animation NGAY LẬP TỨC
+            bool originalRootMotion = false;
+            if (animator != null)
+            {
+                // Chạy luôn animation Skill3, không chờ transition (giảm delay)
+                animator.Play("Skill3", 0, 0f);
+                animator.speed = 0.7f; // Chỉnh tốc độ nhanh hơn một chút để thấy lướt
+                originalRootMotion = animator.applyRootMotion;
+                animator.applyRootMotion = false;
+            }
+            
+            float dir = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
+            
+            // Sử dụng thông số từ data, nếu chưa có thì dùng mặc định (đảm bảo luôn lướt được)
+            float dashSpeed = characterData.skill3DashSpeed > 0 ? characterData.skill3DashSpeed : 35f;
+            float dashDuration = characterData.skill3DashDuration > 0 ? characterData.skill3DashDuration : 0.5f;
+            float knockbackStrength = characterData.skill3Knockback > 0 ? characterData.skill3Knockback : 12f;
+
+            Debug.Log($"[Skill3-Controller] Axe Dashing! Speed: {dashSpeed}, Direction: {dir}");
+            
+            float elapsed = 0f;
+            bool hitEnemy = false;
+
+            while (elapsed < dashDuration && !hitEnemy)
+            {
+                // Duy trì vận tốc lướt
+                rb.velocity = new Vector2(dir * dashSpeed, 0f);
+
+                // Kiểm tra va chạm với kẻ địch
+                Collider2D[] hits = Physics2D.OverlapCircleAll(attack3Point.position, characterData.attack3Range, opponentLayer);
+                foreach (var hit in hits)
+                {
+                    var target = hit.GetComponent<InnerCharacterController>();
+                    if (target != null && !target.isDead)
+                    {
+                        hitEnemy = true;
+                        
+                        // Gây sát thương
+                        target.TakeDamage(characterData.attack3Damage);
+                        
+                        // Đẩy lùi (Knockback)
+                        Rigidbody2D targetRb = target.GetComponent<Rigidbody2D>();
+                        if (targetRb != null)
+                        {
+                            Vector2 knockbackForce = new Vector2(dir * knockbackStrength, 5f);
+                            targetRb.velocity = Vector2.zero;
+                            targetRb.AddForce(knockbackForce, ForceMode2D.Impulse);
+                        }
+
+                        // Hiệu ứng
+                        if (InnerDuel.Effects.ParticleEffectsManager.Instance != null)
+                        {
+                            InnerDuel.Effects.ParticleEffectsManager.Instance.PlayEffect("Hit", target.transform.position, Color.red);
+                        }
+
+                        // Nhảy tới frame kết thúc của animation để tạo cảm giác chém trúng
+                        if (animator != null)
+                        {
+                            animator.speed = 1.0f;
+                            animator.Play("Skill3", 0, 0.8f); // Nhảy tới 80% (đoạn đâm mạnh nhất)
+                            animator.applyRootMotion = originalRootMotion;
+                        }
+
+                        // Tăng thời gian dừng hình để người chơi thấy rõ va chạm (Hit-stop)
+                        rb.velocity = Vector2.zero;
+                        yield return new WaitForSeconds(0.5f); 
+                        break;
+                    }
+                }
+                yield return null;
+                elapsed += Time.deltaTime;
+            }
+
+            // Dừng lướt và trả lại trạng thái
+            rb.velocity = new Vector2(0f, rb.velocity.y);
+            isDashing = false;
+
+            if (animator != null)
+            {
+                animator.speed = 1.0f;
+                animator.applyRootMotion = originalRootMotion;
+            }
+
+            yield return new WaitForSeconds(0.3f);
+            canMove = true;
+        }
+
+        private void SetupOpponentLayer()
+        {
+            // If the layer bits are 0 (not set in inspector), auto-assign them
+            if (opponentLayer.value == 0)
+            {
+                if (playerID == 1)
+                    opponentLayer = LayerMask.GetMask("Player2");
+                else if (playerID == 2)
+                    opponentLayer = LayerMask.GetMask("Player1");
+                
+                Debug.Log($"[InnerCharacterController] Auto-assigned opponentLayer for Player {playerID}: {LayerMask.LayerToName(Mathf.RoundToInt(Mathf.Log(opponentLayer.value, 2)))}");
+            }
         }
 
         public void PauseAnimator(float duration)
