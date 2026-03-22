@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using System.Collections;
 using InnerDuel.Core;
+using InnerDuel.Audio;
 
 namespace InnerDuel.UI
 {
@@ -13,6 +14,9 @@ namespace InnerDuel.UI
         public Image progressBar;
         public TextMeshProUGUI progressText;
         public TextMeshProUGUI loadingTip;
+
+        [Header("Audio")]
+        public AudioClip sceneMusic;
         
         public string[] tips = {
             "Tip: Block to reduce damage from heavy attacks.",
@@ -23,8 +27,18 @@ namespace InnerDuel.UI
 
         private void Start()
         {
+            SetupSceneAudio();
             if (loadingTip) loadingTip.text = tips[Random.Range(0, tips.Length)];
             StartCoroutine(LoadSceneAsync());
+        }
+
+        private void SetupSceneAudio()
+        {
+            if (AudioManager.Instance == null || sceneMusic == null) return;
+
+            string sceneName = SceneManager.GetActiveScene().name;
+            AudioManager.Instance.RegisterSceneMusic(sceneName, sceneMusic);
+            AudioManager.Instance.PlaySceneBGM(sceneName);
         }
 
         IEnumerator LoadSceneAsync()
