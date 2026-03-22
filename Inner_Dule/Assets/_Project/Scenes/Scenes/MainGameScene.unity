@@ -1136,6 +1136,7 @@ MonoBehaviour:
   autoDetectMapBounds: 1
   mapRootName: MapRoot
   mapBoundsInset: 0.1
+  minVisibleRendererAlpha: 0.05
   endingZoomDuration: 2
   endingFinalZoom: 3
 --- !u!114 &519420036
@@ -3560,20 +3561,20 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: 756bc5c2e4f5f954a91c9905e9d902d7, type: 3}
     volumeScale: 2
-    pitchMin: 0
+    pitchMin: 0.5
     pitchMax: 0
   bgmTracks:
   - {fileID: 8300000, guid: 34c4b64dacf8b4a458adf65f0cf22962, type: 3}
   - {fileID: 8300000, guid: 7aa6626348c16bf459bb43cbec126be0, type: 3}
   - {fileID: 8300000, guid: 7aa6626348c16bf459bb43cbec126be0, type: 3}
   hitSounds:
-  - {fileID: 8300000, guid: 95a9edeaaa3850c4e993821f68553570, type: 3}
+  - {fileID: 8300000, guid: befa40696fab37d4e900af92a60df46c, type: 3}
   blockSounds:
   - {fileID: 8300000, guid: 95a9edeaaa3850c4e993821f68553570, type: 3}
   dashSounds:
   - {fileID: 8300000, guid: 95a9edeaaa3850c4e993821f68553570, type: 3}
   deathSounds:
-  - {fileID: 8300000, guid: 34c4b64dacf8b4a458adf65f0cf22962, type: 3}
+  - {fileID: 8300000, guid: befa40696fab37d4e900af92a60df46c, type: 3}
   victorySounds:
   - {fileID: 8300000, guid: 7aa6626348c16bf459bb43cbec126be0, type: 3}
   uiClickSound: {fileID: 8300000, guid: a0bfc38d15e438b4887a5587c85ff9ff, type: 3}

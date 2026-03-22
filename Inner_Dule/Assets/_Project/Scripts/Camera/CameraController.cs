@@ -44,6 +44,8 @@ namespace InnerDuel.Camera
         public string mapRootName = "MapRoot";
         [Tooltip("Inset used for auto bounds to avoid showing map edges.")]
         public float mapBoundsInset = 0.1f;
+        [Tooltip("Minimum SpriteRenderer alpha to be considered when auto-detecting visible map bounds.")]
+        [Range(0f, 1f)] public float minVisibleRendererAlpha = 0.05f;
 
         [Header("Ending Sequence")]
         public float endingZoomDuration = 2f;
@@ -237,11 +239,13 @@ namespace InnerDuel.Camera
 
             bool hasBounds = false;
             Bounds combinedBounds = new Bounds();
+            float visibleAlphaThreshold = Mathf.Max(0.001f, minVisibleRendererAlpha);
 
             for (int i = 0; i < mapRenderers.Length; i++)
             {
                 SpriteRenderer renderer = mapRenderers[i];
                 if (renderer == null || renderer.sprite == null || !renderer.enabled) continue;
+                if (renderer.color.a < visibleAlphaThreshold) continue;
 
                 if (!hasBounds)
                 {
