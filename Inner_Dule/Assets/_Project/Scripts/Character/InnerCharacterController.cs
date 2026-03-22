@@ -578,7 +578,7 @@ namespace InnerDuel.Characters
             }
             
             // Special Logic: Leap (Attack 3)
-            if (attackIndex == 3 && characterData != null && characterData.attack3LeapForce != Vector2.zero)
+            if (attackIndex == 3 && characterData != null && characterData.attack3LeapForce != Vector2.zero && characterData.characterName != "Creative")
             {
                 // Leap
                 float dir = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;

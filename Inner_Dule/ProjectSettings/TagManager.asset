@@ -45,3 +45,12 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: 'Back '
+    uniqueID: 1028913633
+    locked: 0
+  - name: Wall
+    uniqueID: 632770399
+    locked: 0
+  - name: Skill
+    uniqueID: 3190920259
+    locked: 0

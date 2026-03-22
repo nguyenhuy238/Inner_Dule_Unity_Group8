@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4558440588516296608}
   - component: {fileID: 202084449858121473}
   - component: {fileID: 7400880455758802709}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Skill_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -74,8 +74,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1104047037
+  m_SortingLayer: 3
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 6e16befb1024eed45954e02966008338, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -193,7 +193,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29a22bf4f6e79d548b503d53d7712589, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
+  speed: 30
   damage: 10
   lifetime: 3
   hitEffectPrefab: {fileID: 0}
+  applyStun: 0
+  stunDuration: 0
